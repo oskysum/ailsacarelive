@@ -1,0 +1,14 @@
+{
+  "name": "relationship-assessment",
+  "version": "1.0.0",
+  "description": "Relationship assessment tool",
+  "main": "index.html",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  },
+  "scripts": {
+    "test": "echo \"No tests\" && exit 0"
+  },
+  "author": "",
+  "license": "MIT"
+}
