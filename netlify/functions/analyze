@@ -1,0 +1,253 @@
+const fetch = require('node-fetch');
+
+const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
+const PAYPAL_SECRET = process.env.PAYPAL_SECRET;
+
+const rateLimit = new Map();
+const processedOrders = new Set();
+
+exports.handler = async (event) => {
+    // CORS headers
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Content-Type': 'application/json'
+    };
+
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 200, headers, body: '' };
+    }
+
+    if (event.httpMethod !== 'POST') {
+        return { 
+            statusCode: 405,
+            headers,
+            body: JSON.stringify({ success: false, error: 'Method Not Allowed' }) 
+        };
+    }
+
+    try {
+        const { orderId, formData, followUpAnswers } = JSON.parse(event.body);
+        
+        console.log('Processing order:', orderId);
+        
+        // 1. RATE LIMITING (5 minutes between requests)
+        const ip = event.headers['x-forwarded-for'] || event.headers['client-ip'] || 'unknown';
+        if (rateLimit.has(ip)) {
+            const lastRequest = rateLimit.get(ip);
+            if (Date.now() - lastRequest < 300000) {
+                return {
+                    statusCode: 429,
+                    headers,
+                    body: JSON.stringify({ 
+                        success: false, 
+                        error: 'Please wait 5 minutes between requests' 
+                    })
+                };
+            }
+        }
+        rateLimit.set(ip, Date.now());
+        
+        // 2. PREVENT DUPLICATE PROCESSING
+        if (processedOrders.has(orderId)) {
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({ 
+                    success: false, 
+                    error: 'Order already processed' 
+                })
+            };
+        }
+        
+        // 3. VERIFY PAYPAL PAYMENT
+        console.log('Verifying PayPal payment...');
+        await verifyPayPalPayment(orderId);
+        
+        processedOrders.add(orderId);
+        
+        // 4. BUILD OPTIMIZED PROMPT (keep it short for Haiku!)
+        const prompt = buildOptimizedPrompt(formData, followUpAnswers);
+        
+        // 5. CALL CLAUDE HAIKU API
+        console.log('Calling Claude Haiku API...');
+        
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'x-api-key': CLAUDE_API_KEY,
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                // ✅ USING CLAUDE HAIKU (12x cheaper than Sonnet!)
+                model: 'claude-haiku-4-20250514',
+                
+                // ✅ OPTIMIZED max_tokens (Haiku is concise)
+                max_tokens: 1800,
+                
+                temperature: 0.7,
+                
+                // ✅ CONCISE SYSTEM PROMPT (under 200 tokens)
+                system: `You are a relationship psychology assistant. Respond with ONLY valid JSON (no markdown, no code blocks):
+
+{
+  "likelihoodScore": 0-100,
+  "healthScore": 0-100,
+  "likelihoodReason": "2-3 clear sentences",
+  "healthReason": "2-3 clear sentences",
+  "detailedAnalysis": "3-4 paragraphs with specific insights",
+  "expertAdvice": "2-3 paragraphs with actionable steps",
+  "communicationTips": "2-3 paragraphs with practical advice"
+}
+
+Be empathetic, honest, and specific. Focus on the key concerns.`,
+                
+                messages: [{
+                    role: 'user',
+                    content: prompt
+                }]
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Claude API error:', errorText);
+            throw new Error(`Claude API failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Claude Haiku response received');
+        
+        // 6. PARSE RESPONSE
+        let analysisText = data.content[0].text.trim();
+        
+        // Remove markdown code blocks if present
+        if (analysisText.startsWith('```json')) {
+            analysisText = analysisText.replace(/```json\n?/, '').replace(/\n?```$/, '');
+        } else if (analysisText.startsWith('```')) {
+            analysisText = analysisText.replace(/```\n?/, '').replace(/\n?```$/, '');
+        }
+        
+        const analysis = JSON.parse(analysisText);
+        
+        // Validate required fields
+        if (!analysis.likelihoodScore || !analysis.healthScore || !analysis.detailedAnalysis) {
+            throw new Error('Invalid analysis format from Claude');
+        }
+
+        console.log('Analysis completed successfully');
+        console.log('Token usage:', {
+            input: data.usage?.input_tokens || 'unknown',
+            output: data.usage?.output_tokens || 'unknown'
+        });
+
+        return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+                success: true,
+                analysis: analysis
+            })
+        };
+        
+    } catch (error) {
+        console.error('Error in analyze function:', error);
+        
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ 
+                success: false, 
+                error: 'Failed to generate analysis. Please contact support.',
+                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+            })
+        };
+    }
+};
+
+// ============================================
+// VERIFY PAYPAL PAYMENT
+// ============================================
+async function verifyPayPalPayment(orderId) {
+    try {
+        // Get PayPal access token
+        const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`).toString('base64');
+        
+        const tokenResponse = await fetch('https://api-m.paypal.com/v1/oauth2/token', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Basic ${auth}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'grant_type=client_credentials'
+        });
+        
+        if (!tokenResponse.ok) {
+            throw new Error('Failed to get PayPal access token');
+        }
+        
+        const { access_token } = await tokenResponse.json();
+        
+        // Verify the order
+        const orderResponse = await fetch(`https://api-m.paypal.com/v2/checkout/orders/${orderId}`, {
+            headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!orderResponse.ok) {
+            throw new Error('Failed to verify PayPal order');
+        }
+        
+        const order = await orderResponse.json();
+        
+        // Check payment status
+        if (order.status !== 'COMPLETED') {
+            throw new Error('Payment not completed');
+        }
+        
+        // Check payment amount ($1 minimum)
+        const amount = parseFloat(order.purchase_units[0].amount.value);
+        if (amount < 1.00) {
+            throw new Error('Invalid payment amount');
+        }
+        
+        console.log('PayPal payment verified:', { orderId, amount, status: order.status });
+        return true;
+        
+    } catch (error) {
+        console.error('PayPal verification failed:', error);
+        throw new Error('Payment verification failed');
+    }
+}
+
+// ============================================
+// BUILD OPTIMIZED PROMPT (SHORT & FOCUSED)
+// ============================================
+function buildOptimizedPrompt(formData, followUpAnswers) {
+    // Keep prompt concise for Haiku - focus on key details only
+    return `Analyze this relationship:
+
+CLIENT: Age ${formData.userAge}, Partner Age ${formData.partnerAge}
+DURATION: ${formData.relationshipDuration}
+
+CONCERNS:
+${formData.concerns}
+
+CONTEXT:
+- Photos shared: ${followUpAnswers.hasPhotos ? 'Yes' : 'No'}
+- Regular chats: ${followUpAnswers.hasChatHistory ? 'Yes' : 'No'}
+- Exclusivity discussed: ${followUpAnswers.hasExclusivityDiscussion ? 'Yes' : 'No'}
+- Meeting frequency: ${followUpAnswers.meetingFrequency || 'Not specified'}
+${followUpAnswers.exclusivityDiscussion ? `- Discussion details: ${followUpAnswers.exclusivityDiscussion}` : ''}
+
+Provide clear, actionable analysis focusing on:
+1. Likelihood of concerning behavior (0-100 score)
+2. Overall relationship health (0-100 score)
+3. Key red flags or positive signs
+4. Specific next steps they should take`;
+}
