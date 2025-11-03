@@ -1,253 +1,306 @@
-const fetch = require('node-fetch');
+const Anthropic = require('@anthropic-ai/sdk');
 
-const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
-const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
-const PAYPAL_SECRET = process.env.PAYPAL_SECRET;
-
-const rateLimit = new Map();
-const processedOrders = new Set();
-
-exports.handler = async (event) => {
-    // CORS headers
-    const headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Content-Type': 'application/json'
-    };
-
-    if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 200, headers, body: '' };
-    }
-
+exports.handler = async (event, context) => {
+    // Only allow POST requests
     if (event.httpMethod !== 'POST') {
-        return { 
+        return {
             statusCode: 405,
-            headers,
-            body: JSON.stringify({ success: false, error: 'Method Not Allowed' }) 
+            body: JSON.stringify({ error: 'Method not allowed' })
         };
     }
 
     try {
         const { orderId, formData, followUpAnswers } = JSON.parse(event.body);
-        
-        console.log('Processing order:', orderId);
-        
-        // 1. RATE LIMITING (5 minutes between requests)
-        const ip = event.headers['x-forwarded-for'] || event.headers['client-ip'] || 'unknown';
-        if (rateLimit.has(ip)) {
-            const lastRequest = rateLimit.get(ip);
-            if (Date.now() - lastRequest < 300000) {
-                return {
-                    statusCode: 429,
-                    headers,
-                    body: JSON.stringify({ 
-                        success: false, 
-                        error: 'Please wait 5 minutes between requests' 
-                    })
-                };
-            }
-        }
-        rateLimit.set(ip, Date.now());
-        
-        // 2. PREVENT DUPLICATE PROCESSING
-        if (processedOrders.has(orderId)) {
+
+        // Validate required data
+        if (!orderId || !formData || !followUpAnswers) {
             return {
                 statusCode: 400,
-                headers,
-                body: JSON.stringify({ 
-                    success: false, 
-                    error: 'Order already processed' 
-                })
+                body: JSON.stringify({ error: 'Missing required data' })
             };
         }
-        
-        // 3. VERIFY PAYPAL PAYMENT
-        console.log('Verifying PayPal payment...');
-        await verifyPayPalPayment(orderId);
-        
-        processedOrders.add(orderId);
-        
-        // 4. BUILD OPTIMIZED PROMPT (keep it short for Haiku!)
-        const prompt = buildOptimizedPrompt(formData, followUpAnswers);
-        
-        // 5. CALL CLAUDE HAIKU API
-        console.log('Calling Claude Haiku API...');
-        
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'x-api-key': CLAUDE_API_KEY,
-                'anthropic-version': '2023-06-01',
-                'content-type': 'application/json'
-            },
-            body: JSON.stringify({
-                // ✅ USING CLAUDE HAIKU (12x cheaper than Sonnet!)
-                model: 'claude-haiku-4-20250514',
-                
-                // ✅ OPTIMIZED max_tokens (Haiku is concise)
-                max_tokens: 1800,
-                
-                temperature: 0.7,
-                
-                // ✅ CONCISE SYSTEM PROMPT (under 200 tokens)
-                system: `You are a relationship psychology assistant. Respond with ONLY valid JSON (no markdown, no code blocks):
 
-{
-  "likelihoodScore": 0-100,
-  "healthScore": 0-100,
-  "likelihoodReason": "2-3 clear sentences",
-  "healthReason": "2-3 clear sentences",
-  "detailedAnalysis": "3-4 paragraphs with specific insights",
-  "expertAdvice": "2-3 paragraphs with actionable steps",
-  "communicationTips": "2-3 paragraphs with practical advice"
-}
-
-Be empathetic, honest, and specific. Focus on the key concerns.`,
-                
-                messages: [{
-                    role: 'user',
-                    content: prompt
-                }]
-            })
+        // Initialize Anthropic client
+        const anthropic = new Anthropic({
+            apiKey: process.env.CLAUDE_API_KEY
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Claude API error:', errorText);
-            throw new Error(`Claude API failed: ${response.status}`);
-        }
+        // Calculate concern metrics
+        const scores = [
+            followUpAnswers.emotionalDistance,
+            followUpAnswers.technologyPrivacy,
+            followUpAnswers.scheduleChanges,
+            followUpAnswers.appearanceChanges,
+            followUpAnswers.intimacyChanges,
+            followUpAnswers.defensiveness,
+            followUpAnswers.interestInYou
+        ];
 
-        const data = await response.json();
-        console.log('Claude Haiku response received');
+        const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+        const highConcernCount = scores.filter(s => s >= 4).length;
+        const moderateConcernCount = scores.filter(s => s === 3).length;
         
-        // 6. PARSE RESPONSE
-        let analysisText = data.content[0].text.trim();
-        
-        // Remove markdown code blocks if present
-        if (analysisText.startsWith('```json')) {
-            analysisText = analysisText.replace(/```json\n?/, '').replace(/\n?```$/, '');
-        } else if (analysisText.startsWith('```')) {
-            analysisText = analysisText.replace(/```\n?/, '').replace(/\n?```$/, '');
-        }
-        
-        const analysis = JSON.parse(analysisText);
-        
-        // Validate required fields
-        if (!analysis.likelihoodScore || !analysis.healthScore || !analysis.detailedAnalysis) {
-            throw new Error('Invalid analysis format from Claude');
-        }
+        // Determine concern level (out of 10)
+        let concernLevel;
+        if (averageScore <= 1.5) concernLevel = 1;
+        else if (averageScore <= 2.0) concernLevel = 3;
+        else if (averageScore <= 2.5) concernLevel = 4;
+        else if (averageScore <= 3.0) concernLevel = 5;
+        else if (averageScore <= 3.5) concernLevel = 6;
+        else if (averageScore <= 4.0) concernLevel = 7;
+        else if (averageScore <= 4.5) concernLevel = 8;
+        else concernLevel = 9;
 
-        console.log('Analysis completed successfully');
-        console.log('Token usage:', {
-            input: data.usage?.input_tokens || 'unknown',
-            output: data.usage?.output_tokens || 'unknown'
+        // Health score is inverse of concern (1-10 scale)
+        const healthScore = Math.max(1, 11 - concernLevel);
+
+        // Create detailed prompt for Claude
+        const prompt = `You are a compassionate relationship counselor providing a confidential assessment. Analyze this relationship situation with nuance, empathy, and professional insight.
+
+**CRITICAL GUIDELINES:**
+1. DO NOT make accusations or jump to conclusions about infidelity
+2. Emphasize that behavior changes have MULTIPLE possible explanations
+3. Encourage open communication over surveillance or confrontation
+4. Recommend professional counseling for serious concerns
+5. Suggest weekly reassessment to track patterns over time
+6. Be supportive and constructive, not alarmist
+
+**CLIENT INFORMATION:**
+- User Age: ${formData.userAge}
+- Partner Age: ${formData.partnerAge}
+- Relationship Duration: ${formData.relationshipDuration}
+- Primary Concerns: ${formData.concerns}
+
+**BEHAVIORAL ASSESSMENT SCORES (1=No Concern, 5=High Concern):**
+1. Emotional Distance: ${followUpAnswers.emotionalDistance}/5
+2. Technology/Privacy Changes: ${followUpAnswers.technologyPrivacy}/5
+3. Schedule/Availability Changes: ${followUpAnswers.scheduleChanges}/5
+4. Appearance/Spending Changes: ${followUpAnswers.appearanceChanges}/5
+5. Intimacy Changes: ${followUpAnswers.intimacyChanges}/5
+6. Defensiveness: ${followUpAnswers.defensiveness}/5
+7. Interest in Partner's Life: ${followUpAnswers.interestInYou}/5
+
+**CALCULATED METRICS:**
+- Average Score: ${averageScore.toFixed(2)}
+- High Concern Areas (4-5): ${highConcernCount}
+- Moderate Concern Areas (3): ${moderateConcernCount}
+- Concern Level: ${concernLevel}/10
+- Relationship Health Score: ${healthScore}/10
+
+Please provide a comprehensive analysis with these EXACT sections:
+
+**1. BEHAVIORAL PATTERN ANALYSIS:**
+Analyze the specific patterns observed. Identify which areas show the most concern. Be specific but avoid jumping to conclusions. Acknowledge that ${highConcernCount === 0 ? 'no significant red flags were detected' : highConcernCount === 1 ? 'one area shows elevated concern' : 'multiple areas show elevated concern'}.
+
+**2. CONTEXT & ALTERNATIVE EXPLANATIONS:**
+This section is CRITICAL. For each concerning behavior, provide alternative explanations such as:
+- Work stress or career pressure
+- Depression, anxiety, or mental health struggles
+- Life transitions (family issues, health concerns, financial stress)
+- Relationship dissatisfaction that can be addressed through communication
+- Medical issues or hormonal changes
+- Personal growth or identity exploration
+
+Emphasize that these behaviors ALONE do not confirm infidelity. Context and patterns over time matter most.
+
+**3. RECOMMENDED ACTIONS:**
+Provide constructive next steps:
+- Start with open, non-accusatory communication
+- Express feelings using "I" statements
+- Suggest couples counseling if needed
+- Recommend weekly reassessment using this tool to track changes
+- If concern level is high, discuss whether relationship counseling is appropriate
+- Remind them that one assessment is a snapshot, not a diagnosis
+
+**4. COMMUNICATION STRATEGIES:**
+Provide specific scripts or approaches for having a productive conversation:
+- How to express concerns without making accusations
+- Questions to ask that invite honest dialogue
+- Active listening techniques
+- How to create a safe space for vulnerability
+- What NOT to do (accusatory language, ultimatums without discussion)
+
+**TONE REQUIREMENTS:**
+- Be empathetic and supportive
+- Acknowledge their feelings are valid
+- Avoid fear-mongering or jumping to worst-case scenarios
+- Be honest but constructive
+- Remind them that relationships go through phases
+- Encourage professional help when appropriate
+
+Write naturally in paragraphs. Do NOT use bullet points, lists, or excessive formatting. Write as a counselor would speak to a client.`;
+
+        // Call Claude API
+        const message = await anthropic.messages.create({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 4000,
+            temperature: 0.7,
+            messages: [{
+                role: 'user',
+                content: prompt
+            }]
         });
 
+        const analysisText = message.content[0].text;
+
+        // Parse the response into sections
+        const sections = {
+            detailedAnalysis: '',
+            contextAnalysis: '',
+            expertAdvice: '',
+            communicationTips: ''
+        };
+
+        // Split by section headers
+        const patterns = analysisText.split(/\*\*\d\.\s+/);
+        
+        if (patterns.length >= 5) {
+            // Extract each section
+            const behavioralSection = patterns[1].split('**')[0].trim();
+            const contextSection = patterns[2].split('**')[0].trim();
+            const recommendedSection = patterns[3].split('**')[0].trim();
+            const communicationSection = patterns[4].split('**')[0].trim();
+
+            sections.detailedAnalysis = behavioralSection.replace(/BEHAVIORAL PATTERN ANALYSIS:\s*/i, '');
+            sections.contextAnalysis = contextSection.replace(/CONTEXT & ALTERNATIVE EXPLANATIONS:\s*/i, '');
+            sections.expertAdvice = recommendedSection.replace(/RECOMMENDED ACTIONS:\s*/i, '');
+            sections.communicationTips = communicationSection.replace(/COMMUNICATION STRATEGIES:\s*/i, '');
+        } else {
+            // Fallback if parsing fails
+            sections.detailedAnalysis = analysisText;
+            sections.contextAnalysis = 'Multiple factors can contribute to behavioral changes in relationships, including stress, life transitions, mental health challenges, and relationship dynamics that can be improved through communication.';
+            sections.expertAdvice = 'Consider having an open, honest conversation with your partner about your concerns. If issues persist, professional couples counseling can provide valuable guidance.';
+            sections.communicationTips = 'Approach conversations with curiosity rather than accusation. Use "I feel" statements to express your emotions without blaming. Listen actively to understand your partner\'s perspective.';
+        }
+
+        // Prepare email content
+        const emailContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px; margin-bottom: 30px; }
+        .score-box { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+        .score-value { font-size: 48px; font-weight: bold; color: #667eea; }
+        .score-label { color: #666; margin-top: 5px; }
+        .section { margin: 30px 0; }
+        .section h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Your Confidential Relationship Assessment</h1>
+        <p>Professional Analysis - Order #${orderId.substring(0, 8)}</p>
+    </div>
+
+    <div class="warning-box">
+        <strong>Important:</strong> This assessment identifies behavioral patterns that warrant attention. These patterns have multiple possible explanations including stress, depression, life transitions, or relationship issues that can be addressed through communication. This is not a diagnosis of infidelity.
+    </div>
+
+    <div style="display: flex; gap: 20px; margin: 30px 0;">
+        <div class="score-box" style="flex: 1;">
+            <div class="score-value">${concernLevel}/10</div>
+            <div class="score-label">Concern Level</div>
+        </div>
+        <div class="score-box" style="flex: 1;">
+            <div class="score-value">${healthScore}/10</div>
+            <div class="score-label">Health Score</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Behavioral Pattern Analysis</h2>
+        <p>${sections.detailedAnalysis.replace(/\n/g, '</p><p>')}</p>
+    </div>
+
+    <div class="section">
+        <h2>Context & Alternative Explanations</h2>
+        <p>${sections.contextAnalysis.replace(/\n/g, '</p><p>')}</p>
+    </div>
+
+    <div class="section">
+        <h2>Recommended Actions</h2>
+        <p>${sections.expertAdvice.replace(/\n/g, '</p><p>')}</p>
+    </div>
+
+    <div class="section">
+        <h2>Communication Strategies</h2>
+        <p>${sections.communicationTips.replace(/\n/g, '</p><p>')}</p>
+    </div>
+
+    <div class="warning-box">
+        <strong>Weekly Tracking Recommended:</strong> One assessment provides a snapshot. Patterns over time are more meaningful. Consider reassessing weekly to track changes and determine if behaviors are temporary or persistent.
+    </div>
+
+    <div class="footer">
+        <p><strong>Next Steps:</strong></p>
+        <p>1. Reflect on this analysis with an open mind<br>
+        2. Consider your partner's recent life stressors<br>
+        3. Plan a calm, non-accusatory conversation<br>
+        4. Reassess weekly to track patterns<br>
+        5. Seek professional counseling if concerns persist</p>
+        
+        <p style="margin-top: 20px;"><em>This assessment is confidential and for educational purposes. It does not replace professional relationship counseling.</em></p>
+    </div>
+</body>
+</html>
+`;
+
+        // Send email using a service (you'll need to configure this)
+        // For now, we'll just log that email would be sent
+        console.log('Email would be sent to:', formData.userEmail);
+        console.log('Email content prepared');
+
+        // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
+        // Example with SendGrid:
+        /*
+        const sgMail = require('@sendgrid/mail');
+        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+        
+        await sgMail.send({
+            to: formData.userEmail,
+            from: 'results@yoursite.com',
+            subject: 'Your Confidential Relationship Assessment Results',
+            html: emailContent
+        });
+        */
+
+        // Return success response
         return {
             statusCode: 200,
-            headers,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
             body: JSON.stringify({
                 success: true,
-                analysis: analysis
+                analysis: {
+                    concernLevel: `${concernLevel}/10`,
+                    healthScore: `${healthScore}/10`,
+                    detailedAnalysis: sections.detailedAnalysis,
+                    contextAnalysis: sections.contextAnalysis,
+                    expertAdvice: sections.expertAdvice,
+                    communicationTips: sections.communicationTips
+                }
             })
         };
-        
+
     } catch (error) {
         console.error('Error in analyze function:', error);
         
         return {
             statusCode: 500,
-            headers,
-            body: JSON.stringify({ 
-                success: false, 
-                error: 'Failed to generate analysis. Please contact support.',
-                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({
+                success: false,
+                error: 'Failed to generate analysis. Please try again or contact support.'
             })
         };
     }
 };
-
-// ============================================
-// VERIFY PAYPAL PAYMENT
-// ============================================
-async function verifyPayPalPayment(orderId) {
-    try {
-        // Get PayPal access token
-        const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`).toString('base64');
-        
-        const tokenResponse = await fetch('https://api-m.paypal.com/v1/oauth2/token', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${auth}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: 'grant_type=client_credentials'
-        });
-        
-        if (!tokenResponse.ok) {
-            throw new Error('Failed to get PayPal access token');
-        }
-        
-        const { access_token } = await tokenResponse.json();
-        
-        // Verify the order
-        const orderResponse = await fetch(`https://api-m.paypal.com/v2/checkout/orders/${orderId}`, {
-            headers: {
-                'Authorization': `Bearer ${access_token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (!orderResponse.ok) {
-            throw new Error('Failed to verify PayPal order');
-        }
-        
-        const order = await orderResponse.json();
-        
-        // Check payment status
-        if (order.status !== 'COMPLETED') {
-            throw new Error('Payment not completed');
-        }
-        
-        // Check payment amount ($1 minimum)
-        const amount = parseFloat(order.purchase_units[0].amount.value);
-        if (amount < 1.00) {
-            throw new Error('Invalid payment amount');
-        }
-        
-        console.log('PayPal payment verified:', { orderId, amount, status: order.status });
-        return true;
-        
-    } catch (error) {
-        console.error('PayPal verification failed:', error);
-        throw new Error('Payment verification failed');
-    }
-}
-
-// ============================================
-// BUILD OPTIMIZED PROMPT (SHORT & FOCUSED)
-// ============================================
-function buildOptimizedPrompt(formData, followUpAnswers) {
-    // Keep prompt concise for Haiku - focus on key details only
-    return `Analyze this relationship:
-
-CLIENT: Age ${formData.userAge}, Partner Age ${formData.partnerAge}
-DURATION: ${formData.relationshipDuration}
-
-CONCERNS:
-${formData.concerns}
-
-CONTEXT:
-- Photos shared: ${followUpAnswers.hasPhotos ? 'Yes' : 'No'}
-- Regular chats: ${followUpAnswers.hasChatHistory ? 'Yes' : 'No'}
-- Exclusivity discussed: ${followUpAnswers.hasExclusivityDiscussion ? 'Yes' : 'No'}
-- Meeting frequency: ${followUpAnswers.meetingFrequency || 'Not specified'}
-${followUpAnswers.exclusivityDiscussion ? `- Discussion details: ${followUpAnswers.exclusivityDiscussion}` : ''}
-
-Provide clear, actionable analysis focusing on:
-1. Likelihood of concerning behavior (0-100 score)
-2. Overall relationship health (0-100 score)
-3. Key red flags or positive signs
-4. Specific next steps they should take`;
-}
