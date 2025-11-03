@@ -1,8 +1,12 @@
 const Anthropic = require('@anthropic-ai/sdk');
 
 exports.handler = async (event, context) => {
+    console.log('=== ANALYZE FUNCTION STARTED ===');
+    console.log('HTTP Method:', event.httpMethod);
+    
     // Only allow POST requests
     if (event.httpMethod !== 'POST') {
+        console.log('Error: Method not allowed');
         return {
             statusCode: 405,
             body: JSON.stringify({ error: 'Method not allowed' })
@@ -10,22 +14,59 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        const { orderId, formData, followUpAnswers } = JSON.parse(event.body);
+        console.log('Parsing request body...');
+        const requestBody = JSON.parse(event.body);
+        console.log('Request body keys:', Object.keys(requestBody));
+        
+        const { orderId, formData, followUpAnswers } = requestBody;
 
         // Validate required data
-        if (!orderId || !formData || !followUpAnswers) {
+        if (!orderId) {
+            console.log('Error: Missing orderId');
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'Missing required data' })
+                body: JSON.stringify({ error: 'Missing orderId' })
+            };
+        }
+        
+        if (!formData) {
+            console.log('Error: Missing formData');
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'Missing formData' })
+            };
+        }
+        
+        if (!followUpAnswers) {
+            console.log('Error: Missing followUpAnswers');
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'Missing followUpAnswers' })
             };
         }
 
+        console.log('Order ID:', orderId);
+        console.log('Form data keys:', Object.keys(formData));
+        console.log('Follow-up answers:', followUpAnswers);
+
         // Initialize Anthropic client
+        console.log('Initializing Anthropic client...');
+        
+        if (!process.env.CLAUDE_API_KEY) {
+            console.log('Error: CLAUDE_API_KEY not found in environment');
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ error: 'Server configuration error: Missing API key' })
+            };
+        }
+        
         const anthropic = new Anthropic({
             apiKey: process.env.CLAUDE_API_KEY
         });
+        console.log('Anthropic client initialized');
 
         // Calculate concern metrics
+        console.log('Calculating concern metrics...');
         const scores = [
             followUpAnswers.emotionalDistance,
             followUpAnswers.technologyPrivacy,
@@ -35,6 +76,8 @@ exports.handler = async (event, context) => {
             followUpAnswers.defensiveness,
             followUpAnswers.interestInYou
         ];
+
+        console.log('Scores array:', scores);
 
         const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
         const highConcernCount = scores.filter(s => s >= 4).length;
@@ -53,6 +96,10 @@ exports.handler = async (event, context) => {
 
         // Health score is inverse of concern (1-10 scale)
         const healthScore = Math.max(1, 11 - concernLevel);
+
+        console.log('Average score:', averageScore);
+        console.log('Concern level:', concernLevel);
+        console.log('Health score:', healthScore);
 
         // Create detailed prompt for Claude
         const prompt = `You are a compassionate relationship counselor providing a confidential assessment. Analyze this relationship situation with nuance, empathy, and professional insight.
@@ -130,18 +177,35 @@ Provide specific scripts or approaches for having a productive conversation:
 
 Write naturally in paragraphs. Do NOT use bullet points, lists, or excessive formatting. Write as a counselor would speak to a client.`;
 
-        // Call Claude API
-        const message = await anthropic.messages.create({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 4000,
-            temperature: 0.7,
-            messages: [{
-                role: 'user',
-                content: prompt
-            }]
-        });
+        console.log('Calling Claude API...');
+        console.log('Prompt length:', prompt.length);
+        
+        // Call Claude API with error handling
+        let message;
+        try {
+            message = await anthropic.messages.create({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 4000,
+                temperature: 0.7,
+                messages: [{
+                    role: 'user',
+                    content: prompt
+                }]
+            });
+            console.log('Claude API call successful');
+        } catch (apiError) {
+            console.error('Claude API Error:', apiError);
+            console.error('API Error Details:', {
+                message: apiError.message,
+                status: apiError.status,
+                type: apiError.type
+            });
+            throw new Error(`Claude API failed: ${apiError.message}`);
+        }
 
         const analysisText = message.content[0].text;
+        console.log('Analysis text length:', analysisText.length);
+        console.log('First 200 chars:', analysisText.substring(0, 200));
 
         // Parse the response into sections
         const sections = {
@@ -153,6 +217,7 @@ Write naturally in paragraphs. Do NOT use bullet points, lists, or excessive for
 
         // Split by section headers
         const patterns = analysisText.split(/\*\*\d\.\s+/);
+        console.log('Number of sections found:', patterns.length);
         
         if (patterns.length >= 5) {
             // Extract each section
@@ -165,14 +230,17 @@ Write naturally in paragraphs. Do NOT use bullet points, lists, or excessive for
             sections.contextAnalysis = contextSection.replace(/CONTEXT & ALTERNATIVE EXPLANATIONS:\s*/i, '');
             sections.expertAdvice = recommendedSection.replace(/RECOMMENDED ACTIONS:\s*/i, '');
             sections.communicationTips = communicationSection.replace(/COMMUNICATION STRATEGIES:\s*/i, '');
+            
+            console.log('Sections parsed successfully');
         } else {
-            // Fallback if parsing fails
+            console.log('Falling back to default section parsing');
             sections.detailedAnalysis = analysisText;
             sections.contextAnalysis = 'Multiple factors can contribute to behavioral changes in relationships, including stress, life transitions, mental health challenges, and relationship dynamics that can be improved through communication.';
             sections.expertAdvice = 'Consider having an open, honest conversation with your partner about your concerns. If issues persist, professional couples counseling can provide valuable guidance.';
             sections.communicationTips = 'Approach conversations with curiosity rather than accusation. Use "I feel" statements to express your emotions without blaming. Listen actively to understand your partner\'s perspective.';
         }
 
+        console.log('Preparing email content...');
         // Prepare email content
         const emailContent = `
 <!DOCTYPE html>
@@ -249,47 +317,42 @@ Write naturally in paragraphs. Do NOT use bullet points, lists, or excessive for
 </html>
 `;
 
-        // Send email using a service (you'll need to configure this)
-        // For now, we'll just log that email would be sent
+        console.log('Email content prepared, length:', emailContent.length);
         console.log('Email would be sent to:', formData.userEmail);
-        console.log('Email content prepared');
 
-        // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
-        // Example with SendGrid:
-        /*
-        const sgMail = require('@sendgrid/mail');
-        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-        
-        await sgMail.send({
-            to: formData.userEmail,
-            from: 'results@yoursite.com',
-            subject: 'Your Confidential Relationship Assessment Results',
-            html: emailContent
-        });
-        */
+        // TODO: Integrate with email service
+        console.log('Note: Email sending not yet implemented');
 
         // Return success response
+        console.log('Preparing success response...');
+        const response = {
+            success: true,
+            analysis: {
+                concernLevel: `${concernLevel}/10`,
+                healthScore: `${healthScore}/10`,
+                detailedAnalysis: sections.detailedAnalysis,
+                contextAnalysis: sections.contextAnalysis,
+                expertAdvice: sections.expertAdvice,
+                communicationTips: sections.communicationTips
+            }
+        };
+
+        console.log('=== ANALYZE FUNCTION COMPLETED SUCCESSFULLY ===');
+        
         return {
             statusCode: 200,
             headers: {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            body: JSON.stringify({
-                success: true,
-                analysis: {
-                    concernLevel: `${concernLevel}/10`,
-                    healthScore: `${healthScore}/10`,
-                    detailedAnalysis: sections.detailedAnalysis,
-                    contextAnalysis: sections.contextAnalysis,
-                    expertAdvice: sections.expertAdvice,
-                    communicationTips: sections.communicationTips
-                }
-            })
+            body: JSON.stringify(response)
         };
 
     } catch (error) {
-        console.error('Error in analyze function:', error);
+        console.error('=== ERROR IN ANALYZE FUNCTION ===');
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
         
         return {
             statusCode: 500,
@@ -299,7 +362,8 @@ Write naturally in paragraphs. Do NOT use bullet points, lists, or excessive for
             },
             body: JSON.stringify({
                 success: false,
-                error: 'Failed to generate analysis. Please try again or contact support.'
+                error: 'Failed to generate analysis. Please try again or contact support.',
+                details: error.message // Include for debugging
             })
         };
     }
