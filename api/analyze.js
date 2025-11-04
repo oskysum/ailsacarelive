@@ -106,14 +106,22 @@ RECOMMENDED ACTIONS
 COMMUNICATION STRATEGIES
 
 CRITICAL FORMATTING REQUIREMENTS:
-- Use ONLY these five section headers, nothing else
-- Write each section as 3-4 flowing paragraphs in plain text
-- NO markdown formatting at all (no **, ##, -, *, or lists)
-- NO sub-headers or additional titles within sections
+- Use ONLY these five main section headers
+- Within EACH section, include 2-3 sub-headings to improve readability
+- Sub-headings should be preceded by ### (three hashtags)
+- After each sub-heading, write 2-3 paragraphs of explanation
 - NO bullet points or numbered lists anywhere
 - Write naturally as if speaking to a friend
 - Be empathetic and avoid making definitive accusations
 - Each paragraph should be substantial (4-6 sentences)
+
+EXAMPLE FORMAT FOR EACH SECTION:
+SECTION NAME
+### First Sub-Heading
+Paragraph text here...
+
+### Second Sub-Heading  
+Paragraph text here...
 
 FOR THE "DIRECT ANSWER TO YOUR CONCERN" SECTION:
 - Start by briefly restating the user's main concern: "${formData.concerns}"
