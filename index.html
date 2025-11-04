@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relationship Assessment</title>
     
+    <!-- Poppins Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <!-- PayPal SDK - YOUR CLIENT ID -->
     <script src="https://www.paypal.com/sdk/js?client-id=AVKL7Ad1FM9eIVcPEfpL3vxWMrCWqQeTgi-zFg7GOxZWnGL-PvLYtQodVaWzKXViz8FLuxp3giK6aGiV&currency=USD"></script>
     
@@ -16,7 +21,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
@@ -41,11 +46,13 @@
         .header h1 {
             font-size: 28px;
             margin-bottom: 10px;
+            font-weight: 700;
         }
 
         .header p {
             opacity: 0.9;
             font-size: 16px;
+            font-weight: 400;
         }
 
         .step-container {
@@ -72,6 +79,7 @@
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 16px;
+            font-family: 'Poppins', sans-serif;
             transition: border-color 0.3s;
         }
 
@@ -99,6 +107,7 @@
             font-size: 16px;
             margin-bottom: 15px;
             color: #333;
+            font-weight: 600;
         }
 
         .scale-options {
@@ -115,6 +124,7 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s;
+            font-weight: 400;
         }
 
         .scale-option:hover {
@@ -141,6 +151,7 @@
             cursor: pointer;
             transition: all 0.3s;
             margin-right: 10px;
+            font-family: 'Poppins', sans-serif;
         }
 
         .btn-primary {
@@ -176,6 +187,7 @@
         .analysis-preview h3 {
             margin-bottom: 15px;
             color: #333;
+            font-weight: 600;
         }
 
         .analysis-preview ul {
@@ -185,6 +197,7 @@
         .analysis-preview li {
             padding: 8px 0;
             color: #555;
+            font-weight: 400;
         }
 
         .price-info {
@@ -192,6 +205,7 @@
             margin: 25px 0;
             font-size: 24px;
             color: #667eea;
+            font-weight: 600;
         }
 
         #paypal-button-container {
@@ -230,6 +244,7 @@
         .info-box strong {
             display: block;
             margin-bottom: 8px;
+            font-weight: 600;
         }
 
 /* NEW MODERN RESULTS STYLES */
@@ -307,6 +322,78 @@
     font-weight: 600;
     letter-spacing: 0.8px;
     text-transform: uppercase;
+}
+
+/* NEW DIRECT ANSWER CARD */
+.direct-answer-card {
+    background: linear-gradient(135deg, #fff5f0 0%, #ffe8dc 100%);
+    border-radius: 24px;
+    padding: 40px;
+    margin-bottom: 35px;
+    box-shadow: 0 10px 30px rgba(255, 138, 101, 0.2);
+    border: 3px solid #ffb088;
+    position: relative;
+    overflow: hidden;
+}
+
+.direct-answer-card::before {
+    content: '💬';
+    position: absolute;
+    font-size: 80px;
+    opacity: 0.08;
+    top: -10px;
+    right: 20px;
+}
+
+.direct-answer-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(255, 138, 101, 0.3);
+}
+
+.direct-answer-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff8a65 0%, #ff6e40 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 20px;
+    flex-shrink: 0;
+    box-shadow: 0 8px 20px rgba(255, 110, 64, 0.3);
+    color: white;
+}
+
+.direct-answer-icon svg {
+    width: 32px;
+    height: 32px;
+}
+
+.direct-answer-card h3 {
+    font-size: 26px;
+    color: #d84315;
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+.direct-answer-content {
+    color: #5d4037;
+    line-height: 1.9;
+    font-size: 17px;
+    letter-spacing: 0.2px;
+    font-weight: 400;
+}
+
+.direct-answer-content p {
+    margin-bottom: 20px;
+}
+
+.direct-answer-content p:last-child {
+    margin-bottom: 0;
 }
 
 .analysis-card {
@@ -404,9 +491,10 @@
 
 .analysis-content {
     color: #555;
-    line-height: 2;
+    line-height: 1.9;
     font-size: 17px;
     letter-spacing: 0.2px;
+    font-weight: 400;
 }
 
 .analysis-content p {
@@ -420,6 +508,21 @@
 .analysis-content strong {
     color: #c2185b;
     font-weight: 700;
+}
+
+/* Sub-heading styles */
+.sub-heading {
+    font-size: 19px;
+    font-weight: 700;
+    color: #d81b60;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    padding-left: 15px;
+    border-left: 4px solid #ffc1e3;
+}
+
+.sub-heading:first-child {
+    margin-top: 0;
 }
 
 .email-notification {
@@ -471,6 +574,14 @@
         font-size: 46px;
     }
 
+    .direct-answer-card {
+        padding: 28px 22px;
+    }
+
+    .direct-answer-card h3 {
+        font-size: 22px;
+    }
+
     .analysis-card {
         padding: 28px 22px;
     }
@@ -479,19 +590,23 @@
         font-size: 22px;
     }
 
-    .icon-circle {
+    .icon-circle, .direct-answer-icon {
         width: 56px;
         height: 56px;
     }
 
-    .icon-circle svg {
+    .icon-circle svg, .direct-answer-icon svg {
         width: 28px;
         height: 28px;
     }
 
-    .analysis-content {
+    .analysis-content, .direct-answer-content {
         font-size: 16px;
         line-height: 1.8;
+    }
+
+    .sub-heading {
+        font-size: 17px;
     }
 
     .email-notification {
@@ -550,6 +665,339 @@
                 </div>
 
                 <div class="button-group">
+                    <button type="submit" class="btn btn-primary">Continue</button>
+                    <button type="button" class="btn btn-secondary" onclick="showBasicInfoStep()">Back</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Step 3: Payment -->
+        <div id="payment-container" class="step-container" style="display: none;">
+            <h2>Get Your Analysis</h2>
+            
+            <div class="analysis-preview">
+                <h3>What you'll receive:</h3>
+                <ul>
+                    <li>✓ Comprehensive behavioral pattern analysis</li>
+                    <li>✓ Context-aware assessment (not just accusations)</li>
+                    <li>✓ Alternative explanations for behaviors</li>
+                    <li>✓ Constructive communication strategies</li>
+                    <li>✓ Professional recommendations</li>
+                    <li>✓ Results sent to your email</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <strong>Weekly tracking recommended:</strong> Patterns over time are more significant than isolated incidents. Consider reassessing weekly to track changes.
+            </div>
+            
+            <div class="price-info">
+                <p>Investment: <strong>$1.00</strong></p>
+            </div>
+            
+            <!-- PayPal button renders here -->
+            <div id="paypal-button-container"></div>
+            
+            <button type="button" class="btn btn-secondary" onclick="showFollowUpStep()">Back</button>
+        </div>
+
+        <!-- Step 4: Loading -->
+        <div id="loading-container" class="loading-container" style="display: none;">
+            <div class="spinner"></div>
+            <h3>Analyzing your relationship data...</h3>
+            <p>This may take 30-60 seconds</p>
+        </div>
+
+        <!-- Step 5: Results (COMPLETELY REDESIGNED) -->
+        <div id="results-container" class="results-wrapper" style="display: none;">
+            <!-- Scores Header -->
+            <div class="score-header">
+                <h2>Your Relationship Analysis</h2>
+                <div class="score-display">
+                    <div class="score-card">
+                        <div class="score-value" id="concern-score">--</div>
+                        <div class="score-label">Concern Level</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-value" id="health-score">--</div>
+                        <div class="score-label">Health Score</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NEW: Direct Answer to Your Concern -->
+            <div class="direct-answer-card">
+                <div class="direct-answer-header">
+                    <div class="direct-answer-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                        </svg>
+                    </div>
+                    <h3>Direct Answer to Your Concern</h3>
+                </div>
+                <div class="direct-answer-content" id="direct-answer"></div>
+            </div>
+
+            <!-- Behavioral Pattern Analysis -->
+            <div class="analysis-card">
+                <div class="analysis-card-header">
+                    <div class="icon-circle icon-blue">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <h3>Behavioral Pattern Analysis</h3>
+                </div>
+                <div class="analysis-content" id="detailed-analysis"></div>
+            </div>
+
+            <!-- Context & Alternative Explanations -->
+            <div class="analysis-card">
+                <div class="analysis-card-header">
+                    <div class="icon-circle icon-green">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                    </div>
+                    <h3>Context & Alternative Explanations</h3>
+                </div>
+                <div class="analysis-content" id="context-analysis"></div>
+            </div>
+
+            <!-- Recommended Actions -->
+            <div class="analysis-card">
+                <div class="analysis-card-header">
+                    <div class="icon-circle icon-purple">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3>Recommended Actions</h3>
+                </div>
+                <div class="analysis-content" id="expert-advice"></div>
+            </div>
+
+            <!-- Communication Strategies -->
+            <div class="analysis-card">
+                <div class="analysis-card-header">
+                    <div class="icon-circle icon-pink">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                    </div>
+                    <h3>Communication Strategies</h3>
+                </div>
+                <div class="analysis-content" id="communication-tips"></div>
+            </div>
+
+            <!-- Email Notification -->
+            <div class="email-notification">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: inline-block;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                <div><strong>Results Sent!</strong></div>
+                <div>A copy of this analysis has been sent to your email.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let formData = {};
+        let followUpAnswers = {};
+
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            // Basic Info Form
+            document.getElementById('basic-info-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            formData = {
+                userAge: document.getElementById('userAge').value,
+                partnerAge: document.getElementById('partnerAge').value,
+                relationshipDuration: document.getElementById('relationshipDuration').value,
+                userEmail: document.getElementById('userEmail').value,
+                concerns: document.getElementById('concerns').value
+            };
+            
+            showFollowUpStep();
+        });
+
+        // Follow-up Form
+        document.getElementById('followup-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            followUpAnswers = {
+                emotionalDistance: parseInt(document.querySelector('input[name="q1"]:checked').value),
+                technologyPrivacy: parseInt(document.querySelector('input[name="q2"]:checked').value),
+                scheduleChanges: parseInt(document.querySelector('input[name="q3"]:checked').value),
+                appearanceChanges: parseInt(document.querySelector('input[name="q4"]:checked').value),
+                intimacyChanges: parseInt(document.querySelector('input[name="q5"]:checked').value),
+                defensiveness: parseInt(document.querySelector('input[name="q6"]:checked').value),
+                interestInYou: parseInt(document.querySelector('input[name="q7"]:checked').value)
+            };
+            
+            showPaymentStep();
+        });
+
+        // Visual feedback for radio selections
+        document.querySelectorAll('.scale-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const radio = this.querySelector('input[type="radio"]');
+                const name = radio.name;
+                
+                // Remove selected class from all options in this group
+                document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
+                    r.closest('.scale-option').classList.remove('selected');
+                });
+                
+                // Add selected class to clicked option
+                this.classList.add('selected');
+            });
+        });
+
+        function showBasicInfoStep() {
+            document.getElementById('basic-info-container').style.display = 'block';
+            document.getElementById('followup-container').style.display = 'none';
+            document.getElementById('payment-container').style.display = 'none';
+        }
+
+        function showFollowUpStep() {
+            document.getElementById('basic-info-container').style.display = 'none';
+            document.getElementById('followup-container').style.display = 'block';
+            document.getElementById('payment-container').style.display = 'none';
+        }
+
+        function showPaymentStep() {
+            document.getElementById('followup-container').style.display = 'none';
+            document.getElementById('payment-container').style.display = 'block';
+            
+            // Clear any existing PayPal buttons
+            const container = document.getElementById('paypal-button-container');
+            container.innerHTML = '';
+            
+            // Render PayPal button
+            paypal.Buttons({
+                createOrder: function(data, actions) {
+                    return actions.order.create({
+                        purchase_units: [{
+                            amount: {
+                                value: '1.00',
+                                currency_code: 'USD'
+                            },
+                            description: 'Relationship Assessment Analysis'
+                        }]
+                    });
+                },
+                onApprove: function(data, actions) {
+                    return actions.order.capture().then(async function(orderData) {
+                        console.log('Payment completed:', orderData);
+                        
+                        // Show loading
+                        document.getElementById('payment-container').style.display = 'none';
+                        document.getElementById('loading-container').style.display = 'block';
+                        
+                        // Call serverless function
+                        try {
+                            const response = await fetch('/api/analyze', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    orderId: orderData.id,
+                                    formData: formData,
+                                    followUpAnswers: followUpAnswers
+                                })
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                                displayResults(result.analysis);
+                            } else {
+                                throw new Error(result.error || 'Analysis failed');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Failed to generate analysis. Please contact support with order ID: ' + orderData.id);
+                            document.getElementById('loading-container').style.display = 'none';
+                            document.getElementById('payment-container').style.display = 'block';
+                        }
+                    });
+                },
+                onError: function(err) {
+                    console.error('PayPal error:', err);
+                    alert('Payment failed. Please try again.');
+                }
+            }).render('#paypal-button-container');
+        }
+
+        function displayResults(analysis) {
+            document.getElementById('loading-container').style.display = 'none';
+            document.getElementById('results-container').style.display = 'block';
+            
+            // Display scores
+            document.getElementById('concern-score').textContent = analysis.concernLevel;
+            document.getElementById('health-score').textContent = analysis.healthScore;
+            
+            // Display direct answer (no sub-headings for this section)
+            document.getElementById('direct-answer').innerHTML = formatText(analysis.directAnswer);
+            
+            // Display analysis sections with sub-headings
+            document.getElementById('detailed-analysis').innerHTML = formatTextWithSubheadings(analysis.behavioralAnalysis);
+            document.getElementById('context-analysis').innerHTML = formatTextWithSubheadings(analysis.contextAnalysis);
+            document.getElementById('expert-advice').innerHTML = formatTextWithSubheadings(analysis.recommendedActions);
+            document.getElementById('communication-tips').innerHTML = formatTextWithSubheadings(analysis.communicationStrategies);
+            
+            // Scroll to results
+            document.getElementById('results-container').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function formatText(text) {
+            // Simple formatting without sub-headings
+            const paragraphs = text.split('\n\n').length > 1 
+                ? text.split('\n\n') 
+                : text.split('\n');
+            
+            return paragraphs
+                .filter(p => p.trim())
+                .map(p => `<p>${p.trim()}</p>`)
+                .join('');
+        }
+
+        function formatTextWithSubheadings(text) {
+            // Parse [SUBHEAD: ...] format and create sub-headings
+            const parts = text.split(/\[SUBHEAD:\s*([^\]]+)\]/g);
+            let html = '';
+            
+            for (let i = 0; i < parts.length; i++) {
+                if (i % 2 === 0) {
+                    // Regular content
+                    if (parts[i].trim()) {
+                        const paragraphs = parts[i].split('\n\n').length > 1 
+                            ? parts[i].split('\n\n') 
+                            : parts[i].split('\n');
+                        
+                        html += paragraphs
+                            .filter(p => p.trim())
+                            .map(p => `<p>${p.trim()}</p>`)
+                            .join('');
+                    }
+                } else {
+                    // Sub-heading
+                    html += `<div class="sub-heading">${parts[i].trim()}</div>`;
+                }
+            }
+            
+            return html;
+        }
+    </script>
+</body>
+</html>
                     <button type="submit" class="btn btn-primary">Continue</button>
                 </div>
             </form>
@@ -754,291 +1202,3 @@
                 </div>
 
                 <div class="button-group">
-                    <button type="submit" class="btn btn-primary">Continue</button>
-                    <button type="button" class="btn btn-secondary" onclick="showBasicInfoStep()">Back</button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Step 3: Payment -->
-        <div id="payment-container" class="step-container" style="display: none;">
-            <h2>Get Your Analysis</h2>
-            
-            <div class="analysis-preview">
-                <h3>What you'll receive:</h3>
-                <ul>
-                    <li>✓ Comprehensive behavioral pattern analysis</li>
-                    <li>✓ Context-aware assessment (not just accusations)</li>
-                    <li>✓ Alternative explanations for behaviors</li>
-                    <li>✓ Constructive communication strategies</li>
-                    <li>✓ Professional recommendations</li>
-                    <li>✓ Results sent to your email</li>
-                </ul>
-            </div>
-            
-            <div class="info-box">
-                <strong>Weekly tracking recommended:</strong> Patterns over time are more significant than isolated incidents. Consider reassessing weekly to track changes.
-            </div>
-            
-            <div class="price-info">
-                <p>Investment: <strong>$1.00</strong></p>
-            </div>
-            
-            <!-- PayPal button renders here -->
-            <div id="paypal-button-container"></div>
-            
-            <button type="button" class="btn btn-secondary" onclick="showFollowUpStep()">Back</button>
-        </div>
-
-        <!-- Step 4: Loading -->
-        <div id="loading-container" class="loading-container" style="display: none;">
-            <div class="spinner"></div>
-            <h3>Analyzing your relationship data...</h3>
-            <p>This may take 30-60 seconds</p>
-        </div>
-
-        <!-- Step 5: Results (COMPLETELY REDESIGNED) -->
-        <div id="results-container" class="results-wrapper" style="display: none;">
-            <!-- Scores Header -->
-            <div class="score-header">
-                <h2>Your Relationship Analysis</h2>
-                <div class="score-display">
-                    <div class="score-card">
-                        <div class="score-value" id="concern-score">--</div>
-                        <div class="score-label">Concern Level</div>
-                    </div>
-                    <div class="score-card">
-                        <div class="score-value" id="health-score">--</div>
-                        <div class="score-label">Health Score</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Behavioral Pattern Analysis -->
-            <div class="analysis-card">
-                <div class="analysis-card-header">
-                    <div class="icon-circle icon-blue">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                    </div>
-                    <h3>Behavioral Pattern Analysis</h3>
-                </div>
-                <div class="analysis-content" id="detailed-analysis"></div>
-            </div>
-
-            <!-- Context & Alternative Explanations -->
-            <div class="analysis-card">
-                <div class="analysis-card-header">
-                    <div class="icon-circle icon-green">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                        </svg>
-                    </div>
-                    <h3>Context & Alternative Explanations</h3>
-                </div>
-                <div class="analysis-content" id="context-analysis"></div>
-            </div>
-
-            <!-- Recommended Actions -->
-            <div class="analysis-card">
-                <div class="analysis-card-header">
-                    <div class="icon-circle icon-purple">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                    </div>
-                    <h3>Recommended Actions</h3>
-                </div>
-                <div class="analysis-content" id="expert-advice"></div>
-            </div>
-
-            <!-- Communication Strategies -->
-            <div class="analysis-card">
-                <div class="analysis-card-header">
-                    <div class="icon-circle icon-pink">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                        </svg>
-                    </div>
-                    <h3>Communication Strategies</h3>
-                </div>
-                <div class="analysis-content" id="communication-tips"></div>
-            </div>
-
-            <!-- Email Notification -->
-            <div class="email-notification">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: inline-block;">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                </svg>
-                <div><strong>Results Sent!</strong></div>
-                <div>A copy of this analysis has been sent to your email.</div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let formData = {};
-        let followUpAnswers = {};
-
-        // Basic Info Form
-        document.getElementById('basic-info-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            formData = {
-                userAge: document.getElementById('userAge').value,
-                partnerAge: document.getElementById('partnerAge').value,
-                relationshipDuration: document.getElementById('relationshipDuration').value,
-                userEmail: document.getElementById('userEmail').value,
-                concerns: document.getElementById('concerns').value
-            };
-            
-            showFollowUpStep();
-        });
-
-        // Follow-up Form
-        document.getElementById('followup-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            followUpAnswers = {
-                emotionalDistance: parseInt(document.querySelector('input[name="q1"]:checked').value),
-                technologyPrivacy: parseInt(document.querySelector('input[name="q2"]:checked').value),
-                scheduleChanges: parseInt(document.querySelector('input[name="q3"]:checked').value),
-                appearanceChanges: parseInt(document.querySelector('input[name="q4"]:checked').value),
-                intimacyChanges: parseInt(document.querySelector('input[name="q5"]:checked').value),
-                defensiveness: parseInt(document.querySelector('input[name="q6"]:checked').value),
-                interestInYou: parseInt(document.querySelector('input[name="q7"]:checked').value)
-            };
-            
-            showPaymentStep();
-        });
-
-        // Visual feedback for radio selections
-        document.querySelectorAll('.scale-option').forEach(option => {
-            option.addEventListener('click', function() {
-                const radio = this.querySelector('input[type="radio"]');
-                const name = radio.name;
-                
-                // Remove selected class from all options in this group
-                document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
-                    r.closest('.scale-option').classList.remove('selected');
-                });
-                
-                // Add selected class to clicked option
-                this.classList.add('selected');
-            });
-        });
-
-        function showBasicInfoStep() {
-            document.getElementById('basic-info-container').style.display = 'block';
-            document.getElementById('followup-container').style.display = 'none';
-            document.getElementById('payment-container').style.display = 'none';
-        }
-
-        function showFollowUpStep() {
-            document.getElementById('basic-info-container').style.display = 'none';
-            document.getElementById('followup-container').style.display = 'block';
-            document.getElementById('payment-container').style.display = 'none';
-        }
-
-        function showPaymentStep() {
-            document.getElementById('followup-container').style.display = 'none';
-            document.getElementById('payment-container').style.display = 'block';
-            
-            // Clear any existing PayPal buttons
-            const container = document.getElementById('paypal-button-container');
-            container.innerHTML = '';
-            
-            // Render PayPal button
-            paypal.Buttons({
-                createOrder: function(data, actions) {
-                    return actions.order.create({
-                        purchase_units: [{
-                            amount: {
-                                value: '1.00',
-                                currency_code: 'USD'
-                            },
-                            description: 'Relationship Assessment Analysis'
-                        }]
-                    });
-                },
-                onApprove: function(data, actions) {
-                    return actions.order.capture().then(async function(orderData) {
-                        console.log('Payment completed:', orderData);
-                        
-                        // Show loading
-                        document.getElementById('payment-container').style.display = 'none';
-                        document.getElementById('loading-container').style.display = 'block';
-                        
-                        // Call serverless function
-                        try {
-                            const response = await fetch('/api/analyze', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    orderId: orderData.id,
-                                    formData: formData,
-                                    followUpAnswers: followUpAnswers
-                                })
-                            });
-                            
-                            const result = await response.json();
-                            
-                            if (result.success) {
-                                displayResults(result.analysis);
-                            } else {
-                                throw new Error(result.error || 'Analysis failed');
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            alert('Failed to generate analysis. Please contact support with order ID: ' + orderData.id);
-                            document.getElementById('loading-container').style.display = 'none';
-                            document.getElementById('payment-container').style.display = 'block';
-                        }
-                    });
-                },
-                onError: function(err) {
-                    console.error('PayPal error:', err);
-                    alert('Payment failed. Please try again.');
-                }
-            }).render('#paypal-button-container');
-        }
-
-function displayResults(analysis) {
-    document.getElementById('loading-container').style.display = 'none';
-    document.getElementById('results-container').style.display = 'block';
-    
-    // Display scores
-    document.getElementById('concern-score').textContent = analysis.concernLevel;
-    document.getElementById('health-score').textContent = analysis.healthScore;
-    
-    // Display analysis sections with CORRECTED property names
-    document.getElementById('detailed-analysis').innerHTML = formatText(analysis.behavioralAnalysis);
-    document.getElementById('context-analysis').innerHTML = formatText(analysis.contextAnalysis);
-    document.getElementById('expert-advice').innerHTML = formatText(analysis.recommendedActions);
-    document.getElementById('communication-tips').innerHTML = formatText(analysis.communicationStrategies);
-    
-    // Scroll to results
-    document.getElementById('results-container').scrollIntoView({ behavior: 'smooth' });
-}
-
-        function formatText(text) {
-            // Split by double newlines for paragraphs, or single newlines if no double ones exist
-            const paragraphs = text.split('\n\n').length > 1 
-                ? text.split('\n\n') 
-                : text.split('\n');
-            
-            return paragraphs
-                .filter(p => p.trim())
-                .map(p => `<p>${p.trim()}</p>`)
-                .join('');
-        }
-    </script>
-</body>
-</html>
-
-
-
-
