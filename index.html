@@ -1006,23 +1006,23 @@
             }).render('#paypal-button-container');
         }
 
-        function displayResults(analysis) {
-            document.getElementById('loading-container').style.display = 'none';
-            document.getElementById('results-container').style.display = 'block';
-            
-            // Display scores
-            document.getElementById('concern-score').textContent = analysis.concernLevel;
-            document.getElementById('health-score').textContent = analysis.healthScore;
-            
-            // Display analysis sections with proper paragraph formatting
-            document.getElementById('detailed-analysis').innerHTML = formatText(analysis.detailedAnalysis);
-            document.getElementById('context-analysis').innerHTML = formatText(analysis.contextAnalysis);
-            document.getElementById('expert-advice').innerHTML = formatText(analysis.expertAdvice);
-            document.getElementById('communication-tips').innerHTML = formatText(analysis.communicationTips);
-            
-            // Scroll to results
-            document.getElementById('results-container').scrollIntoView({ behavior: 'smooth' });
-        }
+function displayResults(analysis) {
+    document.getElementById('loading-container').style.display = 'none';
+    document.getElementById('results-container').style.display = 'block';
+    
+    // Display scores
+    document.getElementById('concern-score').textContent = analysis.concernLevel;
+    document.getElementById('health-score').textContent = analysis.healthScore;
+    
+    // Display analysis sections with CORRECTED property names
+    document.getElementById('detailed-analysis').innerHTML = formatText(analysis.behavioralAnalysis);
+    document.getElementById('context-analysis').innerHTML = formatText(analysis.contextAnalysis);
+    document.getElementById('expert-advice').innerHTML = formatText(analysis.recommendedActions);
+    document.getElementById('communication-tips').innerHTML = formatText(analysis.communicationStrategies);
+    
+    // Scroll to results
+    document.getElementById('results-container').scrollIntoView({ behavior: 'smooth' });
+}
 
         function formatText(text) {
             // Split by double newlines for paragraphs, or single newlines if no double ones exist
@@ -1038,5 +1038,6 @@
     </script>
 </body>
 </html>
+
 
 
