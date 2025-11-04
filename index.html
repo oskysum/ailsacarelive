@@ -724,7 +724,7 @@
                         
                         // Call serverless function
                         try {
-                            const response = await fetch('/.netlify/functions/analyze', {
+                            const response = await fetch('/api/analyze.js', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
@@ -772,3 +772,4 @@
     </script>
 </body>
 </html>
+
