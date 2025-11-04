@@ -931,5 +931,69 @@
                 .join('');
         }
     </script>
+    function downloadPDF() {
+            const analysis = {
+                concernLevel: document.getElementById('concern-score').textContent,
+                healthScore: document.getElementById('health-score').textContent,
+                detailedAnalysis: document.getElementById('detailed-analysis').innerText,
+                contextAnalysis: document.getElementById('context-analysis').innerText,
+                expertAdvice: document.getElementById('expert-advice').innerText,
+                communicationTips: document.getElementById('communication-tips').innerText
+            };
+
+            const pdfContent = `
+RELATIONSHIP ASSESSMENT REPORT
+Generated: ${new Date().toLocaleDateString()}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SCORES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Concern Level: ${analysis.concernLevel}
+Health Score: ${analysis.healthScore}
+
+
+BEHAVIORAL PATTERN ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${analysis.detailedAnalysis}
+
+
+CONTEXT & ALTERNATIVE EXPLANATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${analysis.contextAnalysis}
+
+
+RECOMMENDED ACTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${analysis.expertAdvice}
+
+
+COMMUNICATION STRATEGIES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${analysis.communicationTips}
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This assessment is for informational purposes only.
+It does not replace professional counseling.
+            `;
+
+            // Create blob and download
+            const blob = new Blob([pdfContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `relationship-assessment-${new Date().getTime()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
 </body>
 </html>
+
