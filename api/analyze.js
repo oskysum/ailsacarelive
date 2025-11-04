@@ -97,49 +97,30 @@ CALCULATED METRICS:
 - High Concern Areas: ${highConcernCount}
 - Cheating Likelihood Assessment: ${cheatingLikelihood}
 
-Please provide a detailed, empathetic analysis organized into EXACTLY these five sections with these EXACT headers:
+Please provide a detailed, empathetic analysis organized into EXACTLY these four sections with these EXACT headers:
 
-DIRECT ANSWER TO YOUR CONCERN
 BEHAVIORAL PATTERN ANALYSIS
 CONTEXT AND ALTERNATIVE EXPLANATIONS
 RECOMMENDED ACTIONS
 COMMUNICATION STRATEGIES
 
 CRITICAL FORMATTING REQUIREMENTS:
-
-For "DIRECT ANSWER TO YOUR CONCERN":
-- This section should directly address the specific concern they wrote: "${formData.concerns}"
-- Use ALL the data provided (ages, duration, behavioral scores, patterns) to give them a personalized, direct answer
-- Be empathetic but honest
-- 2-3 substantial paragraphs
-
-For ALL OTHER sections:
-- Within each section, create 2-4 dynamic sub-headings based on the specific content
-- Format sub-headings like this: [SUBHEAD: Your Sub-heading Text Here]
-- After each sub-heading, write 2-3 paragraphs of content
-- Sub-headings should be natural and relevant to their specific situation
-- Example structure:
-  
-  BEHAVIORAL PATTERN ANALYSIS
-  [SUBHEAD: Communication Breakdown Patterns]
-  (2-3 paragraphs about their communication issues)
-  [SUBHEAD: Trust and Transparency Shifts]
-  (2-3 paragraphs about trust-related observations)
-
-FORMATTING RULES:
-- NO markdown (no **, ##, -, *)
-- Write naturally in flowing paragraphs
+- Use ONLY these four section headers, nothing else
+- Write each section as 3-4 flowing paragraphs in plain text
+- NO markdown formatting at all (no **, ##, -, *, or lists)
+- NO sub-headers or additional titles within sections
+- NO bullet points or numbered lists anywhere
+- Write naturally as if speaking to a friend
 - Be empathetic and avoid making definitive accusations
 - Each paragraph should be substantial (4-6 sentences)
-- Sub-headings must use the [SUBHEAD: ] format exactly
 
-Remember: These five sections will be displayed separately in styled cards. Make each section comprehensive and directly helpful to the user.`;
+Remember: The user will see ONLY these four sections in their report. Make each section comprehensive and self-contained.`;
 
         console.log('CALLING CLAUDE API NOW...');
         
         const message = await anthropic.messages.create({
             model: 'claude-sonnet-4-20250514',
-            max_tokens: 4500,
+            max_tokens: 3500,
             temperature: 0.7,
             messages: [{
                 role: 'user',
@@ -154,44 +135,36 @@ Remember: These five sections will be displayed separately in styled cards. Make
 
         // Parse sections
         const sections = {
-            directAnswer: '',
             behavioralAnalysis: '',
             contextAnalysis: '',
             recommendedActions: '',
             communicationStrategies: ''
         };
 
-        const parts = analysisText.split(/(?:DIRECT ANSWER TO YOUR CONCERN|Direct Answer to Your Concern)/i);
+        const parts = analysisText.split(/(?:BEHAVIORAL PATTERN ANALYSIS|Behavioral Pattern Analysis)/i);
         if (parts.length > 1) {
-            const afterDirect = parts[1];
-            const behavioralParts = afterDirect.split(/(?:BEHAVIORAL PATTERN ANALYSIS|Behavioral Pattern Analysis)/i);
-            if (behavioralParts.length > 1) {
-                sections.directAnswer = behavioralParts[0].trim();
-                const contextParts = behavioralParts[1].split(/(?:CONTEXT AND ALTERNATIVE EXPLANATIONS|Context and Alternative Explanations)/i);
-                if (contextParts.length > 1) {
-                    sections.behavioralAnalysis = contextParts[0].trim();
-                    const actionsParts = contextParts[1].split(/(?:RECOMMENDED ACTIONS|Recommended Actions)/i);
-                    if (actionsParts.length > 1) {
-                        sections.contextAnalysis = actionsParts[0].trim();
-                        const commParts = actionsParts[1].split(/(?:COMMUNICATION STRATEGIES|Communication Strategies)/i);
-                        if (commParts.length > 1) {
-                            sections.recommendedActions = commParts[0].trim();
-                            sections.communicationStrategies = commParts[1].trim();
-                        } else {
-                            sections.recommendedActions = actionsParts[1].trim();
-                        }
+            const afterFirst = parts[1];
+            const contextParts = afterFirst.split(/(?:CONTEXT AND ALTERNATIVE EXPLANATIONS|Context and Alternative Explanations)/i);
+            if (contextParts.length > 1) {
+                sections.behavioralAnalysis = contextParts[0].trim();
+                const actionsParts = contextParts[1].split(/(?:RECOMMENDED ACTIONS|Recommended Actions)/i);
+                if (actionsParts.length > 1) {
+                    sections.contextAnalysis = actionsParts[0].trim();
+                    const commParts = actionsParts[1].split(/(?:COMMUNICATION STRATEGIES|Communication Strategies)/i);
+                    if (commParts.length > 1) {
+                        sections.recommendedActions = commParts[0].trim();
+                        sections.communicationStrategies = commParts[1].trim();
                     } else {
-                        sections.contextAnalysis = contextParts[1].trim();
+                        sections.recommendedActions = actionsParts[1].trim();
                     }
                 } else {
-                    sections.behavioralAnalysis = behavioralParts[1].trim();
+                    sections.contextAnalysis = contextParts[1].trim();
                 }
             } else {
-                sections.directAnswer = afterDirect.trim();
+                sections.behavioralAnalysis = afterFirst.trim();
             }
         } else {
-            // Fallback if new section not found
-            sections.directAnswer = "Unable to parse direct answer section.";
+            sections.behavioralAnalysis = analysisText;
         }
 
         // Clean up formatting
@@ -228,15 +201,6 @@ Remember: These five sections will be displayed separately in styled cards. Make
                     case 'Likely': return '#ef4444';
                     default: return '#667eea';
                 }
-            };
-
-            const formatEmailSection = (text) => {
-                return text.split(/\[SUBHEAD:\s*([^\]]+)\]/g).map((part, i) => {
-                    if (i % 2 === 1) {
-                        return `<h3 style="color: #667eea; font-size: 16px; margin-top: 20px; margin-bottom: 12px;">${part}</h3>`;
-                    }
-                    return part.split('\n\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('');
-                }).join('');
             };
 
             const emailHtml = `<!DOCTYPE html>
@@ -286,29 +250,25 @@ Remember: These five sections will be displayed separately in styled cards. Make
             </div>
         </div>
         <div class="section">
-            <h2>Direct Answer to Your Concern</h2>
-            ${sections.directAnswer.split('\n\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
-        </div>
-        <div class="section">
             <h2>Behavioral Pattern Analysis</h2>
-            ${formatEmailSection(sections.behavioralAnalysis)}
+            ${sections.behavioralAnalysis.split('\n\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
         </div>
         <div class="section">
             <h2>Context & Alternative Explanations</h2>
-            ${formatEmailSection(sections.contextAnalysis)}
+            ${sections.contextAnalysis.split('\n\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
         </div>
         <div class="section">
             <h2>Recommended Actions</h2>
-            ${formatEmailSection(sections.recommendedActions)}
+            ${sections.recommendedActions.split('\n\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
         </div>
         <div class="section">
             <h2>Communication Strategies</h2>
-            ${formatEmailSection(sections.communicationStrategies)}
+            ${sections.communicationStrategies.split('\n\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
         </div>
     </div>
     <div class="footer">
         <p>This assessment is for informational purposes only and does not replace professional counseling.</p>
-        <p>© ${new Date().getFullYear()} Relationship Assessment Service</p>
+        <p>Â© ${new Date().getFullYear()} Relationship Assessment Service</p>
     </div>
 </body>
 </html>`;
@@ -333,7 +293,6 @@ Remember: These five sections will be displayed separately in styled cards. Make
                 cheatingLikelihood: cheatingLikelihood,
                 concernLevel: `${concernLevel}/10`,
                 healthScore: `${healthScore}/10`,
-                directAnswer: sections.directAnswer,
                 behavioralAnalysis: sections.behavioralAnalysis,
                 contextAnalysis: sections.contextAnalysis,
                 recommendedActions: sections.recommendedActions,
