@@ -1,17 +1,6 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const nodemailer = require('nodemailer');
 
-// Helper function to ensure rich paragraph content
-function enhanceContent(text, minParagraphs = 3) {
-    const paragraphs = text.split('\n\n').filter(p => p.trim());
-    
-    if (paragraphs.length < minParagraphs) {
-        console.log(`Content has ${paragraphs.length} paragraphs, less than ${minParagraphs} - may need enhancement`);
-    }
-    
-    return paragraphs.join('\n\n');
-}
-
 module.exports = async (req, res) => {
     console.log('=== ANALYZE FUNCTION STARTED ===');
     console.log('HTTP Method:', req.method);
@@ -98,9 +87,24 @@ module.exports = async (req, res) => {
         // Health score is inverse of concern (1-10 scale)
         const healthScore = Math.max(1, 11 - concernLevel);
 
+        // Calculate cheating likelihood
+        let cheatingLikelihood;
+        if (averageScore <= 2.0) {
+            cheatingLikelihood = "Highly Unlikely";
+        } else if (averageScore <= 2.8) {
+            cheatingLikelihood = "Unlikely";
+        } else if (averageScore <= 3.5) {
+            cheatingLikelihood = "Inconclusive";
+        } else if (averageScore <= 4.2) {
+            cheatingLikelihood = "Possible";
+        } else {
+            cheatingLikelihood = "Likely";
+        }
+
         console.log('Average score:', averageScore);
         console.log('Concern level:', concernLevel);
         console.log('Health score:', healthScore);
+        console.log('Cheating likelihood:', cheatingLikelihood);
 
         // Create detailed prompt for Claude
         const prompt = `You are a compassionate relationship counselor. Analyze this relationship situation with empathy and professional insight.
@@ -124,26 +128,26 @@ CALCULATED METRICS:
 - Average Score: ${averageScore.toFixed(2)}
 - High Concern Areas: ${highConcernCount}
 - Moderate Concern Areas: ${moderateConcernCount}
-- Concern Level: ${concernLevel}/10
-- Health Score: ${healthScore}/10
+- Cheating Likelihood Assessment: ${cheatingLikelihood}
 
-Please provide a detailed, empathetic analysis with these EXACT section headers:
+Please provide a detailed, empathetic analysis organized into EXACTLY these four sections with these EXACT headers:
 
-1. BEHAVIORAL PATTERN ANALYSIS
-2. CONTEXT AND ALTERNATIVE EXPLANATIONS
-3. RECOMMENDED ACTIONS
-4. COMMUNICATION STRATEGIES
+BEHAVIORAL PATTERN ANALYSIS
+CONTEXT AND ALTERNATIVE EXPLANATIONS
+RECOMMENDED ACTIONS
+COMMUNICATION STRATEGIES
 
-IMPORTANT FORMATTING RULES:
-- Write in natural, flowing paragraphs (not bullet points or lists)
-- Each section should be 3-5 substantial paragraphs
-- Use plain text only - NO markdown formatting (no **, ##, -, or *)
-- Be empathetic and avoid accusations
-- Emphasize that behavior changes have multiple possible explanations
-- Use specific examples from the scores when relevant
-- Make it feel personal and thoughtful, not generic
+CRITICAL FORMATTING REQUIREMENTS:
+- Use ONLY these four section headers, nothing else
+- Write each section as 3-4 flowing paragraphs in plain text
+- NO markdown formatting at all (no **, ##, -, *, or lists)
+- NO sub-headers or additional titles within sections
+- NO bullet points or numbered lists anywhere
+- Write naturally as if speaking to a friend
+- Be empathetic and avoid making definitive accusations
+- Each paragraph should be substantial (4-6 sentences)
 
-Focus on providing deep, nuanced insights that help the person understand their situation from multiple angles.`;
+Remember: The user will see ONLY these four sections in their report. Make each section comprehensive and self-contained.`;
 
         console.log('Calling Claude API...');
         
@@ -151,7 +155,7 @@ Focus on providing deep, nuanced insights that help the person understand their 
         try {
             message = await anthropic.messages.create({
                 model: 'claude-sonnet-4-20250514',
-                max_tokens: 4000,
+                max_tokens: 3500,
                 temperature: 0.7,
                 messages: [{
                     role: 'user',
@@ -167,45 +171,48 @@ Focus on providing deep, nuanced insights that help the person understand their 
         const analysisText = message.content[0].text;
         console.log('Analysis received, length:', analysisText.length);
 
-        // Parse the response into sections with better handling
+        // Parse the response into sections
         const sections = {
-            detailedAnalysis: '',
+            behavioralAnalysis: '',
             contextAnalysis: '',
-            expertAdvice: '',
-            communicationTips: ''
+            recommendedActions: '',
+            communicationStrategies: ''
         };
 
-        // Split by numbered section headers
-        const sectionRegex = /\d+\.\s+(BEHAVIORAL PATTERN ANALYSIS|CONTEXT AND ALTERNATIVE EXPLANATIONS|RECOMMENDED ACTIONS|COMMUNICATION STRATEGIES)/gi;
-        const parts = analysisText.split(sectionRegex);
-
-        console.log('Split parts count:', parts.length);
-
-        if (parts.length >= 8) {
-            // parts[0] is before first section
-            // parts[1] is "BEHAVIORAL PATTERN ANALYSIS", parts[2] is its content
-            // parts[3] is "CONTEXT AND...", parts[4] is its content, etc.
-            sections.detailedAnalysis = parts[2].trim();
-            sections.contextAnalysis = parts[4].trim();
-            sections.expertAdvice = parts[6].trim();
-            sections.communicationTips = parts[8].trim();
-            console.log('Sections parsed successfully');
-        } else {
-            console.log('Fallback: Using full text as analysis');
-            // Fallback - use the full response
-            sections.detailedAnalysis = analysisText;
-            sections.contextAnalysis = 'Your relationship is experiencing some challenges, which is completely normal. Many factors beyond infidelity can explain behavioral changes, including work stress, personal struggles, mental health challenges, or natural relationship evolution. It\'s important to approach this with curiosity rather than suspicion.\n\nConsider the broader context of your partner\'s life. Are there new pressures at work? Family issues? Health concerns? Sometimes partners withdraw not because they\'re hiding something, but because they\'re struggling with something they don\'t know how to share.\n\nThe patterns you\'ve noticed deserve attention, but they also deserve compassionate investigation. Creating a safe space for honest dialogue is often more revealing than surveillance or accusation.';
-            sections.expertAdvice = 'Start with gentle, non-accusatory conversations using "I" statements. Express your feelings without blaming. Consider couples counseling as a proactive step, not a last resort. Focus on rebuilding connection through quality time, active listening, and mutual understanding.\n\nSchedule a calm moment to share your observations. Frame them as concerns about the relationship, not accusations about behavior. Ask open-ended questions and genuinely listen to the answers. Sometimes the act of asking with love can create the opening your partner needs.\n\nRemember that addressing concerns early often prevents larger issues. Professional guidance can provide tools and perspectives that transform difficult conversations into opportunities for deeper connection.';
-            sections.communicationTips = 'Use phrases like "I\'ve noticed" instead of "You always." This shifts the conversation from blame to observation. Ask open-ended questions and truly listen to the answers without planning your response while they speak.\n\nChoose calm moments for important conversations, not during conflicts or when either of you is stressed. Express appreciation for what\'s working in your relationship before addressing concerns. This creates emotional safety.\n\nShow vulnerability by sharing your fears. Often when one partner opens up authentically, it invites the other to do the same. Remember that the goal isn\'t to win an argument but to understand each other more deeply.';
+        // Split by section headers (more flexible matching)
+        const parts = analysisText.split(/(?:BEHAVIORAL PATTERN ANALYSIS|Behavioral Pattern Analysis)/i);
+        if (parts.length > 1) {
+            const afterFirst = parts[1];
+            const contextParts = afterFirst.split(/(?:CONTEXT AND ALTERNATIVE EXPLANATIONS|Context and Alternative Explanations)/i);
+            if (contextParts.length > 1) {
+                sections.behavioralAnalysis = contextParts[0].trim();
+                
+                const actionsParts = contextParts[1].split(/(?:RECOMMENDED ACTIONS|Recommended Actions)/i);
+                if (actionsParts.length > 1) {
+                    sections.contextAnalysis = actionsParts[0].trim();
+                    
+                    const commParts = actionsParts[1].split(/(?:COMMUNICATION STRATEGIES|Communication Strategies)/i);
+                    if (commParts.length > 1) {
+                        sections.recommendedActions = commParts[0].trim();
+                        sections.communicationStrategies = commParts[1].trim();
+                    } else {
+                        sections.recommendedActions = actionsParts[1].trim();
+                    }
+                } else {
+                    sections.contextAnalysis = contextParts[1].trim();
+                }
+            } else {
+                sections.behavioralAnalysis = afterFirst.trim();
+            }
         }
 
-        // Clean up any remaining markdown artifacts
+        // Clean up any remaining markdown and formatting artifacts
         Object.keys(sections).forEach(key => {
             sections[key] = sections[key]
-                .replace(/\*\*/g, '')  // Remove bold markdown
-                .replace(/##/g, '')    // Remove headers
-                .replace(/^- /gm, '')  // Remove list markers at line starts
-                .replace(/^\* /gm, '') // Remove asterisk list markers
+                .replace(/\*\*/g, '')
+                .replace(/#{1,6}\s/g, '')
+                .replace(/^[-*]\s/gm, '')
+                .replace(/^\d+\.\s/gm, '')
                 .trim();
         });
 
@@ -222,6 +229,17 @@ Focus on providing deep, nuanced insights that help the person understand their 
                 }
             });
 
+            const getLikelihoodColor = (likelihood) => {
+                switch(likelihood) {
+                    case 'Highly Unlikely': return '#10b981';
+                    case 'Unlikely': return '#84cc16';
+                    case 'Inconclusive': return '#f59e0b';
+                    case 'Possible': return '#f97316';
+                    case 'Likely': return '#ef4444';
+                    default: return '#667eea';
+                }
+            };
+
             const emailHtml = `
 <!DOCTYPE html>
 <html>
@@ -230,11 +248,15 @@ Focus on providing deep, nuanced insights that help the person understand their 
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
         .content { padding: 30px; background: #f9f9f9; }
+        .likelihood-scale { background: white; padding: 25px; margin: 20px 0; border-radius: 12px; text-align: center; border: 3px solid ${getLikelihoodColor(cheatingLikelihood)}; }
+        .likelihood-label { font-size: 14px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .likelihood-value { font-size: 32px; font-weight: bold; color: ${getLikelihoodColor(cheatingLikelihood)}; margin: 10px 0; }
+        .likelihood-scale-bar { display: flex; justify-content: space-between; margin-top: 15px; font-size: 11px; color: #999; }
         .score-box { display: inline-block; background: white; padding: 20px; margin: 10px; border-radius: 8px; text-align: center; }
         .score-value { font-size: 36px; font-weight: bold; color: #667eea; }
-        .section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #667eea; }
-        .section h2 { color: #667eea; margin-top: 0; }
-        .section p { margin-bottom: 15px; line-height: 1.8; }
+        .section { background: white; padding: 25px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #667eea; }
+        .section h2 { color: #667eea; margin-top: 0; margin-bottom: 20px; font-size: 20px; }
+        .section p { margin-bottom: 18px; line-height: 1.8; color: #444; }
         .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
     </style>
 </head>
@@ -245,6 +267,18 @@ Focus on providing deep, nuanced insights that help the person understand their 
     </div>
     
     <div class="content">
+        <div class="likelihood-scale">
+            <div class="likelihood-label">Infidelity Likelihood Assessment</div>
+            <div class="likelihood-value">${cheatingLikelihood}</div>
+            <div class="likelihood-scale-bar">
+                <span>Highly Unlikely</span>
+                <span>Unlikely</span>
+                <span>Inconclusive</span>
+                <span>Possible</span>
+                <span>Likely</span>
+            </div>
+        </div>
+
         <div style="text-align: center;">
             <div class="score-box">
                 <div class="score-value">${concernLevel}/10</div>
@@ -258,22 +292,22 @@ Focus on providing deep, nuanced insights that help the person understand their 
         
         <div class="section">
             <h2>Behavioral Pattern Analysis</h2>
-            ${sections.detailedAnalysis.split('\n\n').map(p => `<p>${p}</p>`).join('')}
+            ${sections.behavioralAnalysis.split('\n\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
         </div>
         
         <div class="section">
             <h2>Context & Alternative Explanations</h2>
-            ${sections.contextAnalysis.split('\n\n').map(p => `<p>${p}</p>`).join('')}
+            ${sections.contextAnalysis.split('\n\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
         </div>
         
         <div class="section">
             <h2>Recommended Actions</h2>
-            ${sections.expertAdvice.split('\n\n').map(p => `<p>${p}</p>`).join('')}
+            ${sections.recommendedActions.split('\n\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
         </div>
         
         <div class="section">
             <h2>Communication Strategies</h2>
-            ${sections.communicationTips.split('\n\n').map(p => `<p>${p}</p>`).join('')}
+            ${sections.communicationStrategies.split('\n\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
         </div>
     </div>
     
@@ -295,19 +329,19 @@ Focus on providing deep, nuanced insights that help the person understand their 
             console.log('Email sent successfully to:', formData.userEmail);
         } catch (emailError) {
             console.error('Email sending failed:', emailError);
-            // Continue anyway - don't fail the whole request if email fails
         }
 
         console.log('Preparing response...');
         const response = {
             success: true,
             analysis: {
+                cheatingLikelihood: cheatingLikelihood,
                 concernLevel: `${concernLevel}/10`,
                 healthScore: `${healthScore}/10`,
-                detailedAnalysis: enhanceContent(sections.detailedAnalysis),
-                contextAnalysis: enhanceContent(sections.contextAnalysis),
-                expertAdvice: enhanceContent(sections.expertAdvice),
-                communicationTips: enhanceContent(sections.communicationTips)
+                behavioralAnalysis: sections.behavioralAnalysis,
+                contextAnalysis: sections.contextAnalysis,
+                recommendedActions: sections.recommendedActions,
+                communicationStrategies: sections.communicationStrategies
             }
         };
 
