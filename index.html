@@ -798,21 +798,31 @@
         </div>
 
         <!-- Step 5: Results (COMPLETELY REDESIGNED) -->
-        <div id="results-container" class="results-wrapper" style="display: none;">
-            <!-- Scores Header -->
-            <div class="score-header">
-                <h2>Your Relationship Analysis</h2>
-                <div class="score-display">
-                    <div class="score-card">
-                        <div class="score-value" id="concern-score">--</div>
-                        <div class="score-label">Concern Level</div>
-                    </div>
-                    <div class="score-card">
-                        <div class="score-value" id="health-score">--</div>
-                        <div class="score-label">Health Score</div>
-                    </div>
-                </div>
+<div id="results-container" class="results-wrapper" style="display: none;">
+    <!-- Scores Header -->
+    <div class="score-header">
+        <h2>Your Relationship Analysis</h2>
+        <div class="score-display">
+            <div class="score-card">
+                <div class="score-value" id="cheating-likelihood">--</div>
+                <div class="score-label">Cheating Likelihood</div>
             </div>
+            <div class="score-card">
+                <div class="score-value" id="concern-score">--</div>
+                <div class="score-label">Concern Level</div>
+            </div>
+            <div class="score-card">
+                <div class="score-value" id="health-score">--</div>
+                <div class="score-label">Health Score</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Direct Answer Section (NEW) -->
+    <div class="analysis-section direct-answer-section">
+        <h3>Direct Answer to Your Concern</h3>
+        <div id="direct-answer" class="analysis-content"></div>
+    </div>
 
             <!-- Behavioral Pattern Analysis -->
             <div class="analysis-card">
@@ -1038,6 +1048,7 @@ function displayResults(analysis) {
     </script>
 </body>
 </html>
+
 
 
 
