@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 module.exports = async (req, res) => {
     console.log('=== ANALYZE FUNCTION STARTED ===');
     console.log('HTTP Method:', req.method);
+    console.log('Full request body:', JSON.stringify(req.body, null, 2));
     
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -39,11 +40,13 @@ module.exports = async (req, res) => {
         }
 
         console.log('Order ID:', orderId);
-        console.log('Form data keys:', Object.keys(formData));
-        console.log('Follow-up answers:', followUpAnswers);
+        console.log('Form data:', JSON.stringify(formData, null, 2));
+        console.log('Follow-up answers:', JSON.stringify(followUpAnswers, null, 2));
 
         // Initialize Anthropic client
         console.log('Initializing Anthropic client...');
+        console.log('API Key exists:', !!process.env.CLAUDE_API_KEY);
+        console.log('API Key length:', process.env.CLAUDE_API_KEY?.length);
         
         if (!process.env.CLAUDE_API_KEY) {
             console.log('Error: CLAUDE_API_KEY not found in environment');
@@ -53,7 +56,7 @@ module.exports = async (req, res) => {
         const anthropic = new Anthropic({
             apiKey: process.env.CLAUDE_API_KEY
         });
-        console.log('Anthropic client initialized');
+        console.log('Anthropic client initialized successfully');
 
         // Calculate concern metrics
         console.log('Calculating concern metrics...');
@@ -150,6 +153,7 @@ CRITICAL FORMATTING REQUIREMENTS:
 Remember: The user will see ONLY these four sections in their report. Make each section comprehensive and self-contained.`;
 
         console.log('Calling Claude API...');
+        console.log('Prompt length:', prompt.length);
         
         let message;
         try {
@@ -163,13 +167,19 @@ Remember: The user will see ONLY these four sections in their report. Make each 
                 }]
             });
             console.log('Claude API call successful');
+            console.log('Response received');
         } catch (apiError) {
-            console.error('Claude API Error:', apiError);
+            console.error('=== CLAUDE API ERROR ===');
+            console.error('Error name:', apiError.name);
+            console.error('Error message:', apiError.message);
+            console.error('Error stack:', apiError.stack);
+            console.error('Full error object:', JSON.stringify(apiError, null, 2));
             throw new Error(`Claude API failed: ${apiError.message}`);
         }
 
         const analysisText = message.content[0].text;
         console.log('Analysis received, length:', analysisText.length);
+        console.log('First 200 chars:', analysisText.substring(0, 200));
 
         // Parse the response into sections
         const sections = {
@@ -181,17 +191,25 @@ Remember: The user will see ONLY these four sections in their report. Make each 
 
         // Split by section headers (more flexible matching)
         const parts = analysisText.split(/(?:BEHAVIORAL PATTERN ANALYSIS|Behavioral Pattern Analysis)/i);
+        console.log('Split into parts, count:', parts.length);
+        
         if (parts.length > 1) {
             const afterFirst = parts[1];
             const contextParts = afterFirst.split(/(?:CONTEXT AND ALTERNATIVE EXPLANATIONS|Context and Alternative Explanations)/i);
+            console.log('Context parts count:', contextParts.length);
+            
             if (contextParts.length > 1) {
                 sections.behavioralAnalysis = contextParts[0].trim();
                 
                 const actionsParts = contextParts[1].split(/(?:RECOMMENDED ACTIONS|Recommended Actions)/i);
+                console.log('Actions parts count:', actionsParts.length);
+                
                 if (actionsParts.length > 1) {
                     sections.contextAnalysis = actionsParts[0].trim();
                     
                     const commParts = actionsParts[1].split(/(?:COMMUNICATION STRATEGIES|Communication Strategies)/i);
+                    console.log('Communication parts count:', commParts.length);
+                    
                     if (commParts.length > 1) {
                         sections.recommendedActions = commParts[0].trim();
                         sections.communicationStrategies = commParts[1].trim();
@@ -204,7 +222,16 @@ Remember: The user will see ONLY these four sections in their report. Make each 
             } else {
                 sections.behavioralAnalysis = afterFirst.trim();
             }
+        } else {
+            console.log('WARNING: Could not parse sections properly, using full text');
+            sections.behavioralAnalysis = analysisText;
         }
+
+        console.log('Section lengths:');
+        console.log('- Behavioral:', sections.behavioralAnalysis.length);
+        console.log('- Context:', sections.contextAnalysis.length);
+        console.log('- Actions:', sections.recommendedActions.length);
+        console.log('- Communication:', sections.communicationStrategies.length);
 
         // Clean up any remaining markdown and formatting artifacts
         Object.keys(sections).forEach(key => {
@@ -328,7 +355,10 @@ Remember: The user will see ONLY these four sections in their report. Make each 
 
             console.log('Email sent successfully to:', formData.userEmail);
         } catch (emailError) {
-            console.error('Email sending failed:', emailError);
+            console.error('=== EMAIL ERROR ===');
+            console.error('Email error:', emailError.message);
+            console.error('Email stack:', emailError.stack);
+            // Continue anyway - don't fail the whole request if email fails
         }
 
         console.log('Preparing response...');
@@ -345,18 +375,22 @@ Remember: The user will see ONLY these four sections in their report. Make each 
             }
         };
 
+        console.log('Response prepared successfully');
         console.log('=== ANALYZE FUNCTION COMPLETED SUCCESSFULLY ===');
         return res.status(200).json(response);
 
     } catch (error) {
-        console.error('=== ERROR IN ANALYZE FUNCTION ===');
-        console.error('Error:', error.message);
-        console.error('Stack:', error.stack);
+        console.error('=== FATAL ERROR IN ANALYZE FUNCTION ===');
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        console.error('Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
         
         return res.status(500).json({
             success: false,
             error: 'Failed to generate analysis. Please try again or contact support.',
-            details: error.message
+            details: error.message,
+            errorType: error.name
         });
     }
 };
