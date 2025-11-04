@@ -75,7 +75,7 @@ module.exports = async (req, res) => {
         console.log('Average:', averageScore);
         console.log('Likelihood:', cheatingLikelihood);
 
-        const prompt = `You are a compassionate relationship counselor. Analyze this relationship situation with empathy and professional insight.
+       const prompt = `You are a compassionate relationship counselor. Analyze this relationship situation with empathy and professional insight.
 
 CLIENT INFORMATION:
 - User Age: ${formData.userAge}
@@ -97,15 +97,16 @@ CALCULATED METRICS:
 - High Concern Areas: ${highConcernCount}
 - Cheating Likelihood Assessment: ${cheatingLikelihood}
 
-Please provide a detailed, empathetic analysis organized into EXACTLY these four sections with these EXACT headers:
+Please provide a detailed, empathetic analysis organized into EXACTLY these five sections with these EXACT headers:
 
+DIRECT ANSWER TO YOUR CONCERN
 BEHAVIORAL PATTERN ANALYSIS
 CONTEXT AND ALTERNATIVE EXPLANATIONS
 RECOMMENDED ACTIONS
 COMMUNICATION STRATEGIES
 
 CRITICAL FORMATTING REQUIREMENTS:
-- Use ONLY these four section headers, nothing else
+- Use ONLY these five section headers, nothing else
 - Write each section as 3-4 flowing paragraphs in plain text
 - NO markdown formatting at all (no **, ##, -, *, or lists)
 - NO sub-headers or additional titles within sections
@@ -114,7 +115,12 @@ CRITICAL FORMATTING REQUIREMENTS:
 - Be empathetic and avoid making definitive accusations
 - Each paragraph should be substantial (4-6 sentences)
 
-Remember: The user will see ONLY these four sections in their report. Make each section comprehensive and self-contained.`;
+FOR THE "DIRECT ANSWER TO YOUR CONCERN" SECTION:
+- Start by briefly restating the user's main concern: "${formData.concerns}"
+- Then provide a direct, specific answer based on ALL the information provided
+- Address their exact question with compassion and clarity
+
+Remember: The user will see ONLY these five sections in their report. Make each section comprehensive and self-contained.`;
 
         console.log('CALLING CLAUDE API NOW...');
         
@@ -134,38 +140,45 @@ Remember: The user will see ONLY these four sections in their report. Make each 
         const analysisText = message.content[0].text;
 
         // Parse sections
-        const sections = {
-            behavioralAnalysis: '',
-            contextAnalysis: '',
-            recommendedActions: '',
-            communicationStrategies: ''
-        };
+const sections = {
+    directAnswer: '',
+    behavioralAnalysis: '',
+    contextAnalysis: '',
+    recommendedActions: '',
+    communicationStrategies: ''
+};
 
-        const parts = analysisText.split(/(?:BEHAVIORAL PATTERN ANALYSIS|Behavioral Pattern Analysis)/i);
-        if (parts.length > 1) {
-            const afterFirst = parts[1];
-            const contextParts = afterFirst.split(/(?:CONTEXT AND ALTERNATIVE EXPLANATIONS|Context and Alternative Explanations)/i);
-            if (contextParts.length > 1) {
-                sections.behavioralAnalysis = contextParts[0].trim();
-                const actionsParts = contextParts[1].split(/(?:RECOMMENDED ACTIONS|Recommended Actions)/i);
-                if (actionsParts.length > 1) {
-                    sections.contextAnalysis = actionsParts[0].trim();
-                    const commParts = actionsParts[1].split(/(?:COMMUNICATION STRATEGIES|Communication Strategies)/i);
-                    if (commParts.length > 1) {
-                        sections.recommendedActions = commParts[0].trim();
-                        sections.communicationStrategies = commParts[1].trim();
-                    } else {
-                        sections.recommendedActions = actionsParts[1].trim();
-                    }
+const parts = analysisText.split(/(?:DIRECT ANSWER TO YOUR CONCERN|Direct Answer to Your Concern)/i);
+if (parts.length > 1) {
+    const afterDirect = parts[1];
+    const behavioralParts = afterDirect.split(/(?:BEHAVIORAL PATTERN ANALYSIS|Behavioral Pattern Analysis)/i);
+    if (behavioralParts.length > 1) {
+        sections.directAnswer = behavioralParts[0].trim();
+        const contextParts = behavioralParts[1].split(/(?:CONTEXT AND ALTERNATIVE EXPLANATIONS|Context and Alternative Explanations)/i);
+        if (contextParts.length > 1) {
+            sections.behavioralAnalysis = contextParts[0].trim();
+            const actionsParts = contextParts[1].split(/(?:RECOMMENDED ACTIONS|Recommended Actions)/i);
+            if (actionsParts.length > 1) {
+                sections.contextAnalysis = actionsParts[0].trim();
+                const commParts = actionsParts[1].split(/(?:COMMUNICATION STRATEGIES|Communication Strategies)/i);
+                if (commParts.length > 1) {
+                    sections.recommendedActions = commParts[0].trim();
+                    sections.communicationStrategies = commParts[1].trim();
                 } else {
-                    sections.contextAnalysis = contextParts[1].trim();
+                    sections.recommendedActions = actionsParts[1].trim();
                 }
             } else {
-                sections.behavioralAnalysis = afterFirst.trim();
+                sections.contextAnalysis = contextParts[1].trim();
             }
         } else {
-            sections.behavioralAnalysis = analysisText;
+            sections.behavioralAnalysis = behavioralParts[1].trim();
         }
+    } else {
+        sections.directAnswer = afterDirect.trim();
+    }
+} else {
+    sections.directAnswer = analysisText;
+}
 
         // Clean up formatting
         Object.keys(sections).forEach(key => {
