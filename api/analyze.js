@@ -306,6 +306,7 @@ if (parts.length > 1) {
                 cheatingLikelihood: cheatingLikelihood,
                 concernLevel: `${concernLevel}/10`,
                 healthScore: `${healthScore}/10`,
+                directAnswer: sections.directAnswer,
                 behavioralAnalysis: sections.behavioralAnalysis,
                 contextAnalysis: sections.contextAnalysis,
                 recommendedActions: sections.recommendedActions,
