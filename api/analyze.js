@@ -1,4 +1,5 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const nodemailer = require('nodemailer');
 
 module.exports = async (req, res) => {
     console.log('=== ANALYZE FUNCTION STARTED ===');
@@ -168,6 +169,94 @@ Be empathetic and avoid making accusations. Emphasize that behavior changes have
             sections.contextAnalysis = 'Multiple factors can contribute to behavioral changes in relationships.';
             sections.expertAdvice = 'Consider having an open conversation with your partner about your concerns.';
             sections.communicationTips = 'Use "I feel" statements to express emotions without blaming.';
+        }
+
+        // Send email with results
+        console.log('Preparing to send email...');
+        try {
+            const transporter = nodemailer.createTransport({
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false,
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASSWORD
+                }
+            });
+
+            const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .content { padding: 30px; background: #f9f9f9; }
+        .score-box { display: inline-block; background: white; padding: 20px; margin: 10px; border-radius: 8px; text-align: center; }
+        .score-value { font-size: 36px; font-weight: bold; color: #667eea; }
+        .section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #667eea; }
+        .section h2 { color: #667eea; margin-top: 0; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Your Relationship Assessment Results</h1>
+        <p>Order ID: ${orderId}</p>
+    </div>
+    
+    <div class="content">
+        <div style="text-align: center;">
+            <div class="score-box">
+                <div class="score-value">${concernLevel}/10</div>
+                <div>Concern Level</div>
+            </div>
+            <div class="score-box">
+                <div class="score-value">${healthScore}/10</div>
+                <div>Health Score</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Behavioral Pattern Analysis</h2>
+            <p>${sections.detailedAnalysis.replace(/\n/g, '<br>')}</p>
+        </div>
+        
+        <div class="section">
+            <h2>Context & Alternative Explanations</h2>
+            <p>${sections.contextAnalysis.replace(/\n/g, '<br>')}</p>
+        </div>
+        
+        <div class="section">
+            <h2>Recommended Actions</h2>
+            <p>${sections.expertAdvice.replace(/\n/g, '<br>')}</p>
+        </div>
+        
+        <div class="section">
+            <h2>Communication Strategies</h2>
+            <p>${sections.communicationTips.replace(/\n/g, '<br>')}</p>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>This assessment is for informational purposes only and does not replace professional counseling.</p>
+        <p>© ${new Date().getFullYear()} Relationship Assessment Service</p>
+    </div>
+</body>
+</html>
+            `;
+
+            await transporter.sendMail({
+                from: `"Relationship Assessment" <${process.env.EMAIL_USER}>`,
+                to: formData.userEmail,
+                subject: 'Your Relationship Assessment Results',
+                html: emailHtml
+            });
+
+            console.log('Email sent successfully to:', formData.userEmail);
+        } catch (emailError) {
+            console.error('Email sending failed:', emailError);
+            // Continue anyway - don't fail the whole request if email fails
         }
 
         console.log('Preparing response...');
