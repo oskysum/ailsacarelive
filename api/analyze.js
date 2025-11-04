@@ -1,99 +1,200 @@
-// Only allow POST requests
-if (event.httpMethod !== 'POST') {
-    console.log('Error: Method not allowed');
-    return {
-        statusCode: 405,
-        body: JSON.stringify({ error: 'Method not allowed' })
-    };
-}
+const Anthropic = require('@anthropic-ai/sdk');
 
-try {
-    console.log('Parsing request body...');
-    const requestBody = JSON.parse(event.body);
-    console.log('Request body keys:', Object.keys(requestBody));
+module.exports = async (req, res) => {
+    console.log('=== ANALYZE FUNCTION STARTED ===');
+    console.log('HTTP Method:', req.method);
     
-    const { orderId, formData, followUpAnswers } = requestBody;
-
-    // Validate required data
-    if (!orderId) {
-        console.log('Error: Missing orderId');
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ error: 'Missing orderId' })
-        };
-    }
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
     
-    if (!formData) {
-        console.log('Error: Missing formData');
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ error: 'Missing formData' })
-        };
-    }
-    
-    if (!followUpAnswers) {
-        console.log('Error: Missing followUpAnswers');
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ error: 'Missing followUpAnswers' })
-        };
+    // Only allow POST requests
+    if (req.method !== 'POST') {
+        console.log('Error: Method not allowed');
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    console.log('Order ID:', orderId);
-    console.log('Form data keys:', Object.keys(formData));
-    console.log('Follow-up answers:', followUpAnswers);
+    try {
+        console.log('Parsing request body...');
+        const requestBody = req.body;
+        console.log('Request body keys:', Object.keys(requestBody));
+        
+        const { orderId, formData, followUpAnswers } = requestBody;
 
-    // Initialize Anthropic client
-    console.log('Initializing Anthropic client...');
-    
-    if (!process.env.CLAUDE_API_KEY) {
-        console.log('Error: CLAUDE_API_KEY not found in environment');
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: 'Server configuration error: Missing API key' })
+        // Validate required data
+        if (!orderId) {
+            console.log('Error: Missing orderId');
+            return res.status(400).json({ error: 'Missing orderId' });
+        }
+        
+        if (!formData) {
+            console.log('Error: Missing formData');
+            return res.status(400).json({ error: 'Missing formData' });
+        }
+        
+        if (!followUpAnswers) {
+            console.log('Error: Missing followUpAnswers');
+            return res.status(400).json({ error: 'Missing followUpAnswers' });
+        }
+
+        console.log('Order ID:', orderId);
+        console.log('Form data keys:', Object.keys(formData));
+        console.log('Follow-up answers:', followUpAnswers);
+
+        // Initialize Anthropic client
+        console.log('Initializing Anthropic client...');
+        
+        if (!process.env.CLAUDE_API_KEY) {
+            console.log('Error: CLAUDE_API_KEY not found in environment');
+            return res.status(500).json({ error: 'Server configuration error: Missing API key' });
+        }
+        
+        const anthropic = new Anthropic({
+            apiKey: process.env.CLAUDE_API_KEY
+        });
+        console.log('Anthropic client initialized');
+
+        // Calculate concern metrics
+        console.log('Calculating concern metrics...');
+        const scores = [
+            followUpAnswers.emotionalDistance,
+            followUpAnswers.technologyPrivacy,
+            followUpAnswers.scheduleChanges,
+            followUpAnswers.appearanceChanges,
+            followUpAnswers.intimacyChanges,
+            followUpAnswers.defensiveness,
+            followUpAnswers.interestInYou
+        ];
+
+        console.log('Scores array:', scores);
+
+        const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+        const highConcernCount = scores.filter(s => s >= 4).length;
+        const moderateConcernCount = scores.filter(s => s === 3).length;
+        
+        // Determine concern level (out of 10)
+        let concernLevel;
+        if (averageScore <= 1.5) concernLevel = 1;
+        else if (averageScore <= 2.0) concernLevel = 3;
+        else if (averageScore <= 2.5) concernLevel = 4;
+        else if (averageScore <= 3.0) concernLevel = 5;
+        else if (averageScore <= 3.5) concernLevel = 6;
+        else if (averageScore <= 4.0) concernLevel = 7;
+        else if (averageScore <= 4.5) concernLevel = 8;
+        else concernLevel = 9;
+
+        // Health score is inverse of concern (1-10 scale)
+        const healthScore = Math.max(1, 11 - concernLevel);
+
+        console.log('Average score:', averageScore);
+        console.log('Concern level:', concernLevel);
+        console.log('Health score:', healthScore);
+
+        // Create detailed prompt for Claude
+        const prompt = `You are a compassionate relationship counselor. Analyze this relationship situation with empathy and professional insight.
+
+CLIENT INFORMATION:
+- User Age: ${formData.userAge}
+- Partner Age: ${formData.partnerAge}
+- Relationship Duration: ${formData.relationshipDuration}
+- Primary Concerns: ${formData.concerns}
+
+BEHAVIORAL ASSESSMENT SCORES (1=No Concern, 5=High Concern):
+1. Emotional Distance: ${followUpAnswers.emotionalDistance}/5
+2. Technology/Privacy Changes: ${followUpAnswers.technologyPrivacy}/5
+3. Schedule/Availability Changes: ${followUpAnswers.scheduleChanges}/5
+4. Appearance/Spending Changes: ${followUpAnswers.appearanceChanges}/5
+5. Intimacy Changes: ${followUpAnswers.intimacyChanges}/5
+6. Defensiveness: ${followUpAnswers.defensiveness}/5
+7. Interest in Partner's Life: ${followUpAnswers.interestInYou}/5
+
+CALCULATED METRICS:
+- Average Score: ${averageScore.toFixed(2)}
+- High Concern Areas: ${highConcernCount}
+- Moderate Concern Areas: ${moderateConcernCount}
+- Concern Level: ${concernLevel}/10
+- Health Score: ${healthScore}/10
+
+Please provide analysis with these sections:
+
+1. BEHAVIORAL PATTERN ANALYSIS
+2. CONTEXT AND ALTERNATIVE EXPLANATIONS
+3. RECOMMENDED ACTIONS
+4. COMMUNICATION STRATEGIES
+
+Be empathetic and avoid making accusations. Emphasize that behavior changes have multiple possible explanations.`;
+
+        console.log('Calling Claude API...');
+        
+        let message;
+        try {
+            message = await anthropic.messages.create({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 4000,
+                temperature: 0.7,
+                messages: [{
+                    role: 'user',
+                    content: prompt
+                }]
+            });
+            console.log('Claude API call successful');
+        } catch (apiError) {
+            console.error('Claude API Error:', apiError);
+            throw new Error(`Claude API failed: ${apiError.message}`);
+        }
+
+        const analysisText = message.content[0].text;
+        console.log('Analysis received, length:', analysisText.length);
+
+        // Parse the response into sections
+        const sections = {
+            detailedAnalysis: '',
+            contextAnalysis: '',
+            expertAdvice: '',
+            communicationTips: ''
         };
+
+        const patterns = analysisText.split(/\d\.\s+[A-Z\s]+:/);
+        
+        if (patterns.length >= 5) {
+            sections.detailedAnalysis = patterns[1].trim();
+            sections.contextAnalysis = patterns[2].trim();
+            sections.expertAdvice = patterns[3].trim();
+            sections.communicationTips = patterns[4].trim();
+            console.log('Sections parsed successfully');
+        } else {
+            console.log('Using full text as analysis');
+            sections.detailedAnalysis = analysisText;
+            sections.contextAnalysis = 'Multiple factors can contribute to behavioral changes in relationships.';
+            sections.expertAdvice = 'Consider having an open conversation with your partner about your concerns.';
+            sections.communicationTips = 'Use "I feel" statements to express emotions without blaming.';
+        }
+
+        console.log('Preparing response...');
+        const response = {
+            success: true,
+            analysis: {
+                concernLevel: `${concernLevel}/10`,
+                healthScore: `${healthScore}/10`,
+                detailedAnalysis: sections.detailedAnalysis,
+                contextAnalysis: sections.contextAnalysis,
+                expertAdvice: sections.expertAdvice,
+                communicationTips: sections.communicationTips
+            }
+        };
+
+        console.log('=== ANALYZE FUNCTION COMPLETED SUCCESSFULLY ===');
+        return res.status(200).json(response);
+
+    } catch (error) {
+        console.error('=== ERROR IN ANALYZE FUNCTION ===');
+        console.error('Error:', error.message);
+        console.error('Stack:', error.stack);
+        
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to generate analysis. Please try again or contact support.',
+            details: error.message
+        });
     }
-    
-    const anthropic = new Anthropic({
-        apiKey: process.env.CLAUDE_API_KEY
-    });
-    console.log('Anthropic client initialized');
-
-    // Calculate concern metrics
-    console.log('Calculating concern metrics...');
-    const scores = [
-        followUpAnswers.emotionalDistance,
-        followUpAnswers.technologyPrivacy,
-        followUpAnswers.scheduleChanges,
-        followUpAnswers.appearanceChanges,
-        followUpAnswers.intimacyChanges,
-        followUpAnswers.defensiveness,
-        followUpAnswers.interestInYou
-    ];
-
-    console.log('Scores array:', scores);
-
-    const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
-    const highConcernCount = scores.filter(s => s >= 4).length;
-    const moderateConcernCount = scores.filter(s => s === 3).length;
-    
-    // Determine concern level (out of 10)
-    let concernLevel;
-    if (averageScore <= 1.5) concernLevel = 1;
-    else if (averageScore <= 2.0) concernLevel = 3;
-    else if (averageScore <= 2.5) concernLevel = 4;
-    else if (averageScore <= 3.0) concernLevel = 5;
-    else if (averageScore <= 3.5) concernLevel = 6;
-    else if (averageScore <= 4.0) concernLevel = 7;
-    else if (averageScore <= 4.5) concernLevel = 8;
-    else concernLevel = 9;
-
-    // Health score is inverse of concern (1-10 scale)
-    const healthScore = Math.max(1, 11 - concernLevel);
-
-    console.log('Average score:', averageScore);
-    console.log('Concern level:', concernLevel);
-    console.log('Health score:', healthScore);
-
-    // Create detailed prompt for Claude
-    const prompt = `You are a compassionate relationship counselor providing a confidential assessment. Analyze this relationship situation with nuance, empathy, and professional insight.
+};
