@@ -1046,19 +1046,27 @@ function displayResults(analysis) {
 }
 
         function formatText(text) {
-            // Split by double newlines for paragraphs, or single newlines if no double ones exist
-            const paragraphs = text.split('\n\n').length > 1 
-                ? text.split('\n\n') 
-                : text.split('\n');
-            
-            return paragraphs
-                .filter(p => p.trim())
-                .map(p => `<p>${p.trim()}</p>`)
-                .join('');
-        }
+    // Split by double newlines for paragraphs
+    const paragraphs = text.split('\n\n').length > 1 
+        ? text.split('\n\n') 
+        : text.split('\n');
+    
+    return paragraphs
+        .filter(p => p.trim())
+        .map(p => {
+            // Check if paragraph is a sub-heading (starts with ###)
+            if (p.trim().startsWith('###')) {
+                const heading = p.trim().replace(/^###\s*/, '');
+                return `<h4 class="sub-heading">${heading}</h4>`;
+            }
+            return `<p>${p.trim()}</p>`;
+        })
+        .join('');
+}
     </script>
 </body>
 </html>
+
 
 
 
