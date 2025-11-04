@@ -1021,10 +1021,14 @@ function displayResults(analysis) {
     document.getElementById('results-container').style.display = 'block';
     
     // Display scores
+    document.getElementById('cheating-likelihood').textContent = analysis.cheatingLikelihood;
     document.getElementById('concern-score').textContent = analysis.concernLevel;
     document.getElementById('health-score').textContent = analysis.healthScore;
     
-    // Display analysis sections with CORRECTED property names
+    // Display direct answer
+    document.getElementById('direct-answer').innerHTML = formatText(analysis.directAnswer);
+    
+    // Display analysis sections
     document.getElementById('detailed-analysis').innerHTML = formatText(analysis.behavioralAnalysis);
     document.getElementById('context-analysis').innerHTML = formatText(analysis.contextAnalysis);
     document.getElementById('expert-advice').innerHTML = formatText(analysis.recommendedActions);
@@ -1048,6 +1052,7 @@ function displayResults(analysis) {
     </script>
 </body>
 </html>
+
 
 
 
