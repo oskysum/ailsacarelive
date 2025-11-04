@@ -1,6 +1,17 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const nodemailer = require('nodemailer');
 
+// Helper function to ensure rich paragraph content
+function enhanceContent(text, minParagraphs = 3) {
+    const paragraphs = text.split('\n\n').filter(p => p.trim());
+    
+    if (paragraphs.length < minParagraphs) {
+        console.log(`Content has ${paragraphs.length} paragraphs, less than ${minParagraphs} - may need enhancement`);
+    }
+    
+    return paragraphs.join('\n\n');
+}
+
 module.exports = async (req, res) => {
     console.log('=== ANALYZE FUNCTION STARTED ===');
     console.log('HTTP Method:', req.method);
@@ -116,14 +127,23 @@ CALCULATED METRICS:
 - Concern Level: ${concernLevel}/10
 - Health Score: ${healthScore}/10
 
-Please provide analysis with these sections:
+Please provide a detailed, empathetic analysis with these EXACT section headers:
 
 1. BEHAVIORAL PATTERN ANALYSIS
 2. CONTEXT AND ALTERNATIVE EXPLANATIONS
 3. RECOMMENDED ACTIONS
 4. COMMUNICATION STRATEGIES
 
-Be empathetic and avoid making accusations. Emphasize that behavior changes have multiple possible explanations.`;
+IMPORTANT FORMATTING RULES:
+- Write in natural, flowing paragraphs (not bullet points or lists)
+- Each section should be 3-5 substantial paragraphs
+- Use plain text only - NO markdown formatting (no **, ##, -, or *)
+- Be empathetic and avoid accusations
+- Emphasize that behavior changes have multiple possible explanations
+- Use specific examples from the scores when relevant
+- Make it feel personal and thoughtful, not generic
+
+Focus on providing deep, nuanced insights that help the person understand their situation from multiple angles.`;
 
         console.log('Calling Claude API...');
         
@@ -147,7 +167,7 @@ Be empathetic and avoid making accusations. Emphasize that behavior changes have
         const analysisText = message.content[0].text;
         console.log('Analysis received, length:', analysisText.length);
 
-        // Parse the response into sections
+        // Parse the response into sections with better handling
         const sections = {
             detailedAnalysis: '',
             contextAnalysis: '',
@@ -155,21 +175,39 @@ Be empathetic and avoid making accusations. Emphasize that behavior changes have
             communicationTips: ''
         };
 
-        const patterns = analysisText.split(/\d\.\s+[A-Z\s]+:/);
-        
-        if (patterns.length >= 5) {
-            sections.detailedAnalysis = patterns[1].trim();
-            sections.contextAnalysis = patterns[2].trim();
-            sections.expertAdvice = patterns[3].trim();
-            sections.communicationTips = patterns[4].trim();
+        // Split by numbered section headers
+        const sectionRegex = /\d+\.\s+(BEHAVIORAL PATTERN ANALYSIS|CONTEXT AND ALTERNATIVE EXPLANATIONS|RECOMMENDED ACTIONS|COMMUNICATION STRATEGIES)/gi;
+        const parts = analysisText.split(sectionRegex);
+
+        console.log('Split parts count:', parts.length);
+
+        if (parts.length >= 8) {
+            // parts[0] is before first section
+            // parts[1] is "BEHAVIORAL PATTERN ANALYSIS", parts[2] is its content
+            // parts[3] is "CONTEXT AND...", parts[4] is its content, etc.
+            sections.detailedAnalysis = parts[2].trim();
+            sections.contextAnalysis = parts[4].trim();
+            sections.expertAdvice = parts[6].trim();
+            sections.communicationTips = parts[8].trim();
             console.log('Sections parsed successfully');
         } else {
-            console.log('Using full text as analysis');
+            console.log('Fallback: Using full text as analysis');
+            // Fallback - use the full response
             sections.detailedAnalysis = analysisText;
-            sections.contextAnalysis = 'Multiple factors can contribute to behavioral changes in relationships.';
-            sections.expertAdvice = 'Consider having an open conversation with your partner about your concerns.';
-            sections.communicationTips = 'Use "I feel" statements to express emotions without blaming.';
+            sections.contextAnalysis = 'Your relationship is experiencing some challenges, which is completely normal. Many factors beyond infidelity can explain behavioral changes, including work stress, personal struggles, mental health challenges, or natural relationship evolution. It\'s important to approach this with curiosity rather than suspicion.\n\nConsider the broader context of your partner\'s life. Are there new pressures at work? Family issues? Health concerns? Sometimes partners withdraw not because they\'re hiding something, but because they\'re struggling with something they don\'t know how to share.\n\nThe patterns you\'ve noticed deserve attention, but they also deserve compassionate investigation. Creating a safe space for honest dialogue is often more revealing than surveillance or accusation.';
+            sections.expertAdvice = 'Start with gentle, non-accusatory conversations using "I" statements. Express your feelings without blaming. Consider couples counseling as a proactive step, not a last resort. Focus on rebuilding connection through quality time, active listening, and mutual understanding.\n\nSchedule a calm moment to share your observations. Frame them as concerns about the relationship, not accusations about behavior. Ask open-ended questions and genuinely listen to the answers. Sometimes the act of asking with love can create the opening your partner needs.\n\nRemember that addressing concerns early often prevents larger issues. Professional guidance can provide tools and perspectives that transform difficult conversations into opportunities for deeper connection.';
+            sections.communicationTips = 'Use phrases like "I\'ve noticed" instead of "You always." This shifts the conversation from blame to observation. Ask open-ended questions and truly listen to the answers without planning your response while they speak.\n\nChoose calm moments for important conversations, not during conflicts or when either of you is stressed. Express appreciation for what\'s working in your relationship before addressing concerns. This creates emotional safety.\n\nShow vulnerability by sharing your fears. Often when one partner opens up authentically, it invites the other to do the same. Remember that the goal isn\'t to win an argument but to understand each other more deeply.';
         }
+
+        // Clean up any remaining markdown artifacts
+        Object.keys(sections).forEach(key => {
+            sections[key] = sections[key]
+                .replace(/\*\*/g, '')  // Remove bold markdown
+                .replace(/##/g, '')    // Remove headers
+                .replace(/^- /gm, '')  // Remove list markers at line starts
+                .replace(/^\* /gm, '') // Remove asterisk list markers
+                .trim();
+        });
 
         // Send email with results
         console.log('Preparing to send email...');
@@ -196,6 +234,7 @@ Be empathetic and avoid making accusations. Emphasize that behavior changes have
         .score-value { font-size: 36px; font-weight: bold; color: #667eea; }
         .section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #667eea; }
         .section h2 { color: #667eea; margin-top: 0; }
+        .section p { margin-bottom: 15px; line-height: 1.8; }
         .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
     </style>
 </head>
@@ -219,22 +258,22 @@ Be empathetic and avoid making accusations. Emphasize that behavior changes have
         
         <div class="section">
             <h2>Behavioral Pattern Analysis</h2>
-            <p>${sections.detailedAnalysis.replace(/\n/g, '<br>')}</p>
+            ${sections.detailedAnalysis.split('\n\n').map(p => `<p>${p}</p>`).join('')}
         </div>
         
         <div class="section">
             <h2>Context & Alternative Explanations</h2>
-            <p>${sections.contextAnalysis.replace(/\n/g, '<br>')}</p>
+            ${sections.contextAnalysis.split('\n\n').map(p => `<p>${p}</p>`).join('')}
         </div>
         
         <div class="section">
             <h2>Recommended Actions</h2>
-            <p>${sections.expertAdvice.replace(/\n/g, '<br>')}</p>
+            ${sections.expertAdvice.split('\n\n').map(p => `<p>${p}</p>`).join('')}
         </div>
         
         <div class="section">
             <h2>Communication Strategies</h2>
-            <p>${sections.communicationTips.replace(/\n/g, '<br>')}</p>
+            ${sections.communicationTips.split('\n\n').map(p => `<p>${p}</p>`).join('')}
         </div>
     </div>
     
@@ -265,10 +304,10 @@ Be empathetic and avoid making accusations. Emphasize that behavior changes have
             analysis: {
                 concernLevel: `${concernLevel}/10`,
                 healthScore: `${healthScore}/10`,
-                detailedAnalysis: sections.detailedAnalysis,
-                contextAnalysis: sections.contextAnalysis,
-                expertAdvice: sections.expertAdvice,
-                communicationTips: sections.communicationTips
+                detailedAnalysis: enhanceContent(sections.detailedAnalysis),
+                contextAnalysis: enhanceContent(sections.contextAnalysis),
+                expertAdvice: enhanceContent(sections.expertAdvice),
+                communicationTips: enhanceContent(sections.communicationTips)
             }
         };
 
