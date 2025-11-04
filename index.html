@@ -3,997 +3,441 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relationship Assessment</title>
-    
-    <!-- PayPal SDK - YOUR CLIENT ID -->
-    <script src="https://www.paypal.com/sdk/js?client-id=AVKL7Ad1FM9eIVcPEfpL3vxWMrCWqQeTgi-zFg7GOxZWnGL-PvLYtQodVaWzKXViz8FLuxp3giK6aGiV&currency=USD"></script>
-    
+    <title>Relationship Assessment Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 700px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 16px;
-        }
-
-        .step-container {
-            padding: 40px 30px;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
+        .markdown-content h1, .markdown-content h2, .markdown-content h3 {
             font-weight: 600;
-            color: #333;
+            margin-top: 1em;
+            margin-bottom: 0.5em;
         }
-
-        input[type="number"],
-        input[type="email"],
-        select,
-        textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
+        .markdown-content h1 { font-size: 1.5em; }
+        .markdown-content h2 { font-size: 1.3em; }
+        .markdown-content h3 { font-size: 1.1em; }
+        .markdown-content p { margin-bottom: 0.75em; line-height: 1.6; }
+        .markdown-content ul, .markdown-content ol {
+            margin-left: 1.5em;
+            margin-bottom: 0.75em;
         }
-
-        input:focus,
-        select:focus,
-        textarea:focus {
-            outline: none;
-            border-color: #667eea;
+        .markdown-content ul { list-style-type: disc; }
+        .markdown-content ol { list-style-type: decimal; }
+        .markdown-content li { margin-bottom: 0.25em; }
+        .markdown-content strong { font-weight: 600; }
+        .markdown-content code {
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
         }
-
-        textarea {
-            resize: vertical;
-            min-height: 120px;
-        }
-
-        .question-card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border-left: 4px solid #667eea;
-        }
-
-        .question-card h3 {
-            font-size: 16px;
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .scale-options {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .scale-option {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .scale-option:hover {
-            border-color: #667eea;
-            background: #f0f4ff;
-        }
-
-        .scale-option input[type="radio"] {
-            margin-right: 12px;
-            cursor: pointer;
-        }
-
-        .scale-option.selected {
-            border-color: #667eea;
-            background: #f0f4ff;
-        }
-
-        .btn {
-            padding: 14px 30px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-right: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-        }
-
-        .btn-secondary:hover {
-            background: #e0e0e0;
-        }
-
-        .button-group {
-            margin-top: 30px;
-        }
-
-        .analysis-preview {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-        }
-
-        .analysis-preview h3 {
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .analysis-preview ul {
-            list-style: none;
-        }
-
-        .analysis-preview li {
-            padding: 8px 0;
-            color: #555;
-        }
-
-        .price-info {
-            text-align: center;
-            margin: 25px 0;
-            font-size: 24px;
-            color: #667eea;
-        }
-
-        #paypal-button-container {
-            margin: 25px 0;
-        }
-
-        .loading-container {
-            text-align: center;
-            padding: 60px 30px;
-        }
-
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 3px solid rgba(147, 51, 234, 0.1);
+            border-top: 3px solid #9333ea;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        .info-box {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            color: #856404;
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
         }
-
-        .info-box strong {
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        /* NEW MODERN RESULTS STYLES */
-        .results-wrapper {
-            background: #f8f9fa;
-            padding: 30px;
-        }
-
-        .score-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 16px;
-            padding: 40px 30px;
-            margin-bottom: 30px;
-            color: white;
-            text-align: center;
-        }
-
-        .score-header h2 {
-            font-size: 32px;
-            margin-bottom: 30px;
-        }
-
-        .score-display {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .score-card {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            padding: 25px;
-            border-radius: 12px;
-            text-align: center;
-        }
-
-        .score-value {
-            font-size: 48px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .score-label {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .analysis-card {
-            background: white;
-            border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .analysis-card-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .icon-circle {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            flex-shrink: 0;
-        }
-
-        .icon-circle svg {
-            width: 24px;
-            height: 24px;
-        }
-
-        .icon-blue {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .icon-green {
-            background: #e8f5e9;
-            color: #388e3c;
-        }
-
-        .icon-purple {
-            background: #f3e5f5;
-            color: #7b1fa2;
-        }
-
-        .icon-pink {
-            background: #fce4ec;
-            color: #c2185b;
-        }
-
-        .analysis-card h3 {
-            font-size: 22px;
-            color: #333;
-            margin: 0;
-        }
-
-        .analysis-content {
-            color: #555;
-            line-height: 1.8;
-            font-size: 16px;
-        }
-
-        .analysis-content p {
-            margin-bottom: 15px;
-        }
-
-        .analysis-content p:last-child {
-            margin-bottom: 0;
-        }
-
-        .email-notification {
-            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 12px;
-            text-align: center;
-            margin-top: 30px;
-            font-size: 18px;
-        }
-
-        .email-notification svg {
-            width: 32px;
-            height: 32px;
-            margin-bottom: 10px;
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                border-radius: 0;
-            }
-            
-            .header {
-                padding: 30px 20px;
-            }
-            
-            .step-container {
-                padding: 30px 20px;
-            }
-
-            .results-wrapper {
-                padding: 20px;
-            }
-            
-            .score-display {
-                grid-template-columns: 1fr;
-            }
-
-            .score-header h2 {
-                font-size: 24px;
-            }
-
-            .analysis-card {
-                padding: 20px;
-            }
-
-            .analysis-card h3 {
-                font-size: 18px;
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Confidential Relationship Assessment</h1>
-            <p>Get professional insights into your relationship</p>
+<body class="bg-gradient-to-br from-purple-50 to-pink-50 min-h-screen py-8 px-4">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Relationship Assessment Results
+            </h1>
+            <p class="text-gray-600 text-base md:text-lg">
+                Your comprehensive relationship analysis report
+            </p>
         </div>
 
-        <!-- Step 1: Basic Information -->
-        <div id="basic-info-container" class="step-container">
-            <h2>Basic Information</h2>
-            <form id="basic-info-form">
-                <div class="form-group">
-                    <label for="userAge">Your Age</label>
-                    <input type="number" id="userAge" min="18" max="100" required>
+        <!-- Results Container -->
+        <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 fade-in">
+            <!-- Loading State -->
+            <div id="loadingState" class="flex flex-col items-center justify-center py-12">
+                <div class="spinner mb-4"></div>
+                <p class="text-gray-600 text-base">Analyzing your relationship assessment...</p>
+                <p class="text-gray-500 text-sm mt-2">Generating compatibility score, strengths, areas for growth, and personalized recommendations...</p>
+            </div>
+
+            <!-- Analysis Results -->
+            <div id="analysisResults" class="hidden">
+                <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+                    <h2 class="text-2xl font-bold text-gray-800">💕 Your Relationship Report</h2>
+                    <div class="flex gap-3 flex-wrap">
+                        <button
+                            id="downloadPdfBtn"
+                            class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition text-base font-medium shadow-md hover:shadow-lg"
+                        >
+                            📄 Download PDF
+                        </button>
+                        <button
+                            id="emailReportBtn"
+                            class="px-6 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition text-base font-medium shadow-md hover:shadow-lg"
+                        >
+                            📧 Email Report
+                        </button>
+                        <button
+                            onclick="window.location.href='/'"
+                            class="px-6 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition text-base font-medium"
+                        >
+                            New Assessment
+                        </button>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="partnerAge">Partner's Age</label>
-                    <input type="number" id="partnerAge" min="18" max="100" required>
+                <!-- Compatibility Score -->
+                <div id="compatibilityScore" class="bg-gradient-to-r from-purple-100 via-pink-100 to-purple-100 rounded-lg p-6 shadow-lg border-2 border-purple-300 mb-6">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="text-2xl">⭐</span>
+                        <h3 class="text-xl font-bold text-gray-800">Compatibility Score</h3>
+                    </div>
+                    <div id="compatibilityContent" class="text-lg font-semibold text-purple-700"></div>
                 </div>
 
-                <div class="form-group">
-                    <label for="relationshipDuration">How long have you been together?</label>
-                    <select id="relationshipDuration" required>
-                        <option value="">Select duration</option>
-                        <option value="Less than a month">Less than a month</option>
-                        <option value="1-3 months">1-3 months</option>
-                        <option value="3-6 months">3-6 months</option>
-                        <option value="6-12 months">6-12 months</option>
-                        <option value="1-2 years">1-2 years</option>
-                        <option value="More than 2 years">More than 2 years</option>
-                    </select>
+                <!-- Assessment Report -->
+                <div class="bg-white rounded-lg p-6 shadow-lg border-4 border-purple-200 mb-6">
+                    <div class="flex items-center gap-2 mb-4 pb-3 border-b-2 border-gray-200">
+                        <span class="text-2xl">📊</span>
+                        <h3 class="text-xl font-bold text-gray-800">Detailed Assessment</h3>
+                    </div>
+                    <div id="assessmentContent" class="markdown-content prose max-w-none"></div>
                 </div>
 
-                <div class="form-group">
-                    <label for="userEmail">Your Email (for results)</label>
-                    <input type="email" id="userEmail" required>
+                <!-- Relationship Strengths -->
+                <div class="bg-white rounded-lg p-6 shadow-lg border-4 border-green-200 mb-6">
+                    <div class="flex items-center gap-2 mb-4 pb-3 border-b-2 border-gray-200">
+                        <span class="text-2xl">💪</span>
+                        <h3 class="text-xl font-bold text-gray-800">Relationship Strengths</h3>
+                    </div>
+                    <div id="strengthsContent" class="markdown-content prose max-w-none"></div>
                 </div>
 
-                <div class="form-group">
-                    <label for="concerns">What are your main concerns?</label>
-                    <textarea id="concerns" required placeholder="Please share your concerns in detail..."></textarea>
+                <!-- Areas for Growth -->
+                <div class="bg-white rounded-lg p-6 shadow-lg border-4 border-amber-200 mb-6">
+                    <div class="flex items-center gap-2 mb-4 pb-3 border-b-2 border-gray-200">
+                        <span class="text-2xl">🌱</span>
+                        <h3 class="text-xl font-bold text-gray-800">Areas for Growth</h3>
+                    </div>
+                    <div id="growthContent" class="markdown-content prose max-w-none"></div>
                 </div>
 
-                <div class="button-group">
-                    <button type="submit" class="btn btn-primary">Continue</button>
+                <!-- Personalized Recommendations -->
+                <div class="bg-white rounded-lg p-6 shadow-lg border-4 border-blue-200">
+                    <div class="flex items-center gap-2 mb-4 pb-3 border-b-2 border-gray-200">
+                        <span class="text-2xl">💡</span>
+                        <h3 class="text-xl font-bold text-gray-800">Personalized Recommendations</h3>
+                    </div>
+                    <div id="recommendationsContent" class="markdown-content prose max-w-none"></div>
                 </div>
-            </form>
+            </div>
         </div>
+    </div>
 
-        <!-- Step 2: Behavioral Assessment -->
-        <div id="followup-container" class="step-container" style="display: none;">
-            <h2>Behavioral Assessment</h2>
-            
-            <div class="info-box">
-                <strong>Important:</strong> These questions assess common relationship patterns. Changes in behavior can have many explanations beyond infidelity, including stress, depression, or life transitions.
-            </div>
-
-            <form id="followup-form">
-                <!-- Question 1: Emotional Distance -->
-                <div class="question-card">
-                    <h3>1. Has your partner become emotionally distant or detached recently?</h3>
-                    <div class="scale-options">
-                        <label class="scale-option">
-                            <input type="radio" name="q1" value="1" required>
-                            <span>Not at all - Same emotional connection as always</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q1" value="2">
-                            <span>Slightly - Minor changes, could be stress</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q1" value="3">
-                            <span>Moderately - Noticeable withdrawal from conversations</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q1" value="4">
-                            <span>Significantly - Feels like talking to a stranger</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q1" value="5">
-                            <span>Extremely - Complete emotional disconnect</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Question 2: Technology & Privacy -->
-                <div class="question-card">
-                    <h3>2. Have there been sudden changes in phone/device privacy habits?</h3>
-                    <div class="scale-options">
-                        <label class="scale-option">
-                            <input type="radio" name="q2" value="1" required>
-                            <span>No changes - Same openness as before</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q2" value="2">
-                            <span>Minor - Slightly more protective but reasonable</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q2" value="3">
-                            <span>Moderate - New passwords, face-down phone placement</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q2" value="4">
-                            <span>Significant - Takes calls privately, deletes messages</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q2" value="5">
-                            <span>Extreme - Completely guarded, defensive when questioned</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Question 3: Schedule Changes -->
-                <div class="question-card">
-                    <h3>3. Are there unexplained absences or changes in availability?</h3>
-                    <div class="scale-options">
-                        <label class="scale-option">
-                            <input type="radio" name="q3" value="1" required>
-                            <span>No - Schedule is transparent and consistent</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q3" value="2">
-                            <span>Rarely - Occasional late work with clear explanations</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q3" value="3">
-                            <span>Sometimes - Vague about whereabouts, new "commitments"</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q3" value="4">
-                            <span>Frequently - Often unavailable with weak excuses</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q3" value="5">
-                            <span>Constantly - Large unexplained time gaps regularly</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Question 4: Appearance & Habits -->
-                <div class="question-card">
-                    <h3>4. Have you noticed sudden changes in appearance, grooming, or spending?</h3>
-                    <div class="scale-options">
-                        <label class="scale-option">
-                            <input type="radio" name="q4" value="1" required>
-                            <span>No changes - Same routine and style</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q4" value="2">
-                            <span>Minor - Small updates, self-improvement phase</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q4" value="3">
-                            <span>Moderate - New cologne/perfume, different clothing style</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q4" value="4">
-                            <span>Significant - Major makeover, unexplained expenses</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q4" value="5">
-                            <span>Dramatic - Complete transformation, secretive purchases</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Question 5: Intimacy Changes -->
-                <div class="question-card">
-                    <h3>5. Have there been significant changes in physical intimacy?</h3>
-                    <div class="scale-options">
-                        <label class="scale-option">
-                            <input type="radio" name="q5" value="1" required>
-                            <span>No change - Same level of affection and intimacy</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q5" value="2">
-                            <span>Slight decrease - Could be stress or fatigue</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q5" value="3">
-                            <span>Moderate change - Noticeable avoidance or new preferences</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q5" value="4">
-                            <span>Significant - Rare intimacy or sudden increase (guilt-driven)</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q5" value="5">
-                            <span>Extreme - Complete avoidance or drastically different behavior</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Question 6: Defensiveness -->
-                <div class="question-card">
-                    <h3>6. How does your partner react to simple questions about their day?</h3>
-                    <div class="scale-options">
-                        <label class="scale-option">
-                            <input type="radio" name="q6" value="1" required>
-                            <span>Open - Shares freely, welcomes conversation</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q6" value="2">
-                            <span>Mostly open - Occasionally brief but not defensive</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q6" value="3">
-                            <span>Guarded - Vague answers, changes subject</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q6" value="4">
-                            <span>Defensive - Gets irritated, accuses you of being nosy</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q6" value="5">
-                            <span>Hostile - Angry reactions, picks fights to deflect</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Question 7: Interest in Your Life -->
-                <div class="question-card">
-                    <h3>7. How interested is your partner in your life and well-being?</h3>
-                    <div class="scale-options">
-                        <label class="scale-option">
-                            <input type="radio" name="q7" value="1" required>
-                            <span>Very interested - Asks about your day, cares about details</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q7" value="2">
-                            <span>Interested - Checks in regularly</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q7" value="3">
-                            <span>Somewhat distant - Polite but superficial</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q7" value="4">
-                            <span>Disinterested - Rarely asks, seems preoccupied</span>
-                        </label>
-                        <label class="scale-option">
-                            <input type="radio" name="q7" value="5">
-                            <span>Completely disconnected - Shows no interest at all</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="button-group">
-                    <button type="submit" class="btn btn-primary">Continue</button>
-                    <button type="button" class="btn btn-secondary" onclick="showBasicInfoStep()">Back</button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Step 3: Payment -->
-        <div id="payment-container" class="step-container" style="display: none;">
-            <h2>Get Your Analysis</h2>
-            
-            <div class="analysis-preview">
-                <h3>What you'll receive:</h3>
-                <ul>
-                    <li>✓ Comprehensive behavioral pattern analysis</li>
-                    <li>✓ Context-aware assessment (not just accusations)</li>
-                    <li>✓ Alternative explanations for behaviors</li>
-                    <li>✓ Constructive communication strategies</li>
-                    <li>✓ Professional recommendations</li>
-                    <li>✓ Results sent to your email</li>
-                </ul>
-            </div>
-            
-            <div class="info-box">
-                <strong>Weekly tracking recommended:</strong> Patterns over time are more significant than isolated incidents. Consider reassessing weekly to track changes.
-            </div>
-            
-            <div class="price-info">
-                <p>Investment: <strong>$1.00</strong></p>
-            </div>
-            
-            <!-- PayPal button renders here -->
-            <div id="paypal-button-container"></div>
-            
-            <button type="button" class="btn btn-secondary" onclick="showFollowUpStep()">Back</button>
-        </div>
-
-        <!-- Step 4: Loading -->
-        <div id="loading-container" class="loading-container" style="display: none;">
-            <div class="spinner"></div>
-            <h3>Analyzing your relationship data...</h3>
-            <p>This may take 30-60 seconds</p>
-        </div>
-
-        <!-- Step 5: Results (COMPLETELY REDESIGNED) -->
-        <div id="results-container" class="results-wrapper" style="display: none;">
-            <!-- Scores Header -->
-            <div class="score-header">
-                <h2>Your Relationship Analysis</h2>
-                <div class="score-display">
-                    <div class="score-card">
-                        <div class="score-value" id="concern-score">--</div>
-                        <div class="score-label">Concern Level</div>
-                    </div>
-                    <div class="score-card">
-                        <div class="score-value" id="health-score">--</div>
-                        <div class="score-label">Health Score</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Behavioral Pattern Analysis -->
-            <div class="analysis-card">
-                <div class="analysis-card-header">
-                    <div class="icon-circle icon-blue">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                    </div>
-                    <h3>Behavioral Pattern Analysis</h3>
-                </div>
-                <div class="analysis-content" id="detailed-analysis"></div>
-            </div>
-
-            <!-- Context & Alternative Explanations -->
-            <div class="analysis-card">
-                <div class="analysis-card-header">
-                    <div class="icon-circle icon-green">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                        </svg>
-                    </div>
-                    <h3>Context & Alternative Explanations</h3>
-                </div>
-                <div class="analysis-content" id="context-analysis"></div>
-            </div>
-
-            <!-- Recommended Actions -->
-            <div class="analysis-card">
-                <div class="analysis-card-header">
-                    <div class="icon-circle icon-purple">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                    </div>
-                    <h3>Recommended Actions</h3>
-                </div>
-                <div class="analysis-content" id="expert-advice"></div>
-            </div>
-
-            <!-- Communication Strategies -->
-            <div class="analysis-card">
-                <div class="analysis-card-header">
-                    <div class="icon-circle icon-pink">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                        </svg>
-                    </div>
-                    <h3>Communication Strategies</h3>
-                </div>
-                <div class="analysis-content" id="communication-tips"></div>
-            </div>
-
-            <!-- Email Notification -->
-            <div class="email-notification">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: inline-block;">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                </svg>
-                <div><strong>Results Sent!</strong></div>
-                <div>A copy of this analysis has been sent to your email.</div>
+    <!-- Email Modal -->
+    <div id="emailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 p-6">
+            <h3 class="text-xl font-bold mb-4 text-gray-800">📧 Email Your Report</h3>
+            <input
+                type="email"
+                id="emailInput"
+                placeholder="Enter your email address"
+                class="w-full px-4 py-3 text-base bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition mb-4"
+            >
+            <div class="flex gap-3 justify-end">
+                <button
+                    onclick="closeEmailModal()"
+                    class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition text-base font-medium"
+                >
+                    Cancel
+                </button>
+                <button
+                    onclick="sendEmail()"
+                    class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition text-base font-medium"
+                >
+                    Send Email
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        let formData = {};
-        let followUpAnswers = {};
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session');
 
-        // Basic Info Form
-        document.getElementById('basic-info-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            formData = {
-                userAge: document.getElementById('userAge').value,
-                partnerAge: document.getElementById('partnerAge').value,
-                relationshipDuration: document.getElementById('relationshipDuration').value,
-                userEmail: document.getElementById('userEmail').value,
-                concerns: document.getElementById('concerns').value
-            };
-            
-            showFollowUpStep();
-        });
-
-        // Follow-up Form
-        document.getElementById('followup-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            followUpAnswers = {
-                emotionalDistance: parseInt(document.querySelector('input[name="q1"]:checked').value),
-                technologyPrivacy: parseInt(document.querySelector('input[name="q2"]:checked').value),
-                scheduleChanges: parseInt(document.querySelector('input[name="q3"]:checked').value),
-                appearanceChanges: parseInt(document.querySelector('input[name="q4"]:checked').value),
-                intimacyChanges: parseInt(document.querySelector('input[name="q5"]:checked').value),
-                defensiveness: parseInt(document.querySelector('input[name="q6"]:checked').value),
-                interestInYou: parseInt(document.querySelector('input[name="q7"]:checked').value)
-            };
-            
-            showPaymentStep();
-        });
-
-        // Visual feedback for radio selections
-        document.querySelectorAll('.scale-option').forEach(option => {
-            option.addEventListener('click', function() {
-                const radio = this.querySelector('input[type="radio"]');
-                const name = radio.name;
-                
-                // Remove selected class from all options in this group
-                document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
-                    r.closest('.scale-option').classList.remove('selected');
-                });
-                
-                // Add selected class to clicked option
-                this.classList.add('selected');
-            });
-        });
-
-        function showBasicInfoStep() {
-            document.getElementById('basic-info-container').style.display = 'block';
-            document.getElementById('followup-container').style.display = 'none';
-            document.getElementById('payment-container').style.display = 'none';
+        if (!sessionId) {
+            window.location.href = '/';
         }
 
-        function showFollowUpStep() {
-            document.getElementById('basic-info-container').style.display = 'none';
-            document.getElementById('followup-container').style.display = 'block';
-            document.getElementById('payment-container').style.display = 'none';
-        }
-
-        function showPaymentStep() {
-            document.getElementById('followup-container').style.display = 'none';
-            document.getElementById('payment-container').style.display = 'block';
-            
-            // Clear any existing PayPal buttons
-            const container = document.getElementById('paypal-button-container');
-            container.innerHTML = '';
-            
-            // Render PayPal button
-            paypal.Buttons({
-                createOrder: function(data, actions) {
-                    return actions.order.create({
-                        purchase_units: [{
-                            amount: {
-                                value: '1.00',
-                                currency_code: 'USD'
-                            },
-                            description: 'Relationship Assessment Analysis'
-                        }]
-                    });
-                },
-                onApprove: function(data, actions) {
-                    return actions.order.capture().then(async function(orderData) {
-                        console.log('Payment completed:', orderData);
-                        
-                        // Show loading
-                        document.getElementById('payment-container').style.display = 'none';
-                        document.getElementById('loading-container').style.display = 'block';
-                        
-                        // Call serverless function
-                        try {
-                            const response = await fetch('/api/analyze.js', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    orderId: orderData.id,
-                                    formData: formData,
-                                    followUpAnswers: followUpAnswers
-                                })
-                            });
-                            
-                            const result = await response.json();
-                            
-                            if (result.success) {
-                                displayResults(result.analysis);
-                            } else {
-                                throw new Error(result.error || 'Analysis failed');
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            alert('Failed to generate analysis. Please contact support with order ID: ' + orderData.id);
-                            document.getElementById('loading-container').style.display = 'none';
-                            document.getElementById('payment-container').style.display = 'block';
-                        }
-                    });
-                },
-                onError: function(err) {
-                    console.error('PayPal error:', err);
-                    alert('Payment failed. Please try again.');
+        // Load results
+        async function loadResults() {
+            try {
+                const response = await fetch(`/api/get-result?session=${sessionId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load results');
                 }
-            }).render('#paypal-button-container');
+
+                const data = await response.json();
+                
+                // Hide loading, show results
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('analysisResults').classList.remove('hidden');
+
+                // Parse and display content
+                if (data.assessmentReport) {
+                    document.getElementById('assessmentContent').innerHTML = marked.parse(data.assessmentReport);
+                }
+                
+                if (data.strengths) {
+                    document.getElementById('strengthsContent').innerHTML = marked.parse(data.strengths);
+                }
+                
+                if (data.areasForGrowth) {
+                    document.getElementById('growthContent').innerHTML = marked.parse(data.areasForGrowth);
+                }
+                
+                if (data.recommendations) {
+                    document.getElementById('recommendationsContent').innerHTML = marked.parse(data.recommendations);
+                }
+
+                // Extract compatibility score
+                const scoreMatch = data.assessmentReport?.match(/compatibility score[:\s]+(\d+)\/10/i) ||
+                                  data.assessmentReport?.match(/score[:\s]+(\d+)\/10/i) ||
+                                  data.assessmentReport?.match(/(\d+)\/10/);
+                
+                if (scoreMatch) {
+                    const score = scoreMatch[1];
+                    document.getElementById('compatibilityContent').innerHTML = `
+                        <div class="text-4xl font-bold text-purple-600">${score}/10</div>
+                    `;
+                } else {
+                    document.getElementById('compatibilityContent').innerHTML = `
+                        <div class="text-gray-600">See detailed assessment below</div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Error loading results:', error);
+                document.getElementById('assessmentContent').innerHTML = `
+                    <div class="text-red-600 font-semibold">❌ Error loading results. Please try again.</div>
+                `;
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('analysisResults').classList.remove('hidden');
+            }
         }
 
-        function displayResults(analysis) {
-            document.getElementById('loading-container').style.display = 'none';
-            document.getElementById('results-container').style.display = 'block';
-            
-            // Display scores
-            document.getElementById('concern-score').textContent = analysis.concernLevel;
-            document.getElementById('health-score').textContent = analysis.healthScore;
-            
-            // Display analysis sections with proper paragraph formatting
-            document.getElementById('detailed-analysis').innerHTML = formatText(analysis.detailedAnalysis);
-            document.getElementById('context-analysis').innerHTML = formatText(analysis.contextAnalysis);
-            document.getElementById('expert-advice').innerHTML = formatText(analysis.expertAdvice);
-            document.getElementById('communication-tips').innerHTML = formatText(analysis.communicationTips);
-            
-            // Scroll to results
-            document.getElementById('results-container').scrollIntoView({ behavior: 'smooth' });
+        // Download PDF
+        document.getElementById('downloadPdfBtn').addEventListener('click', async function() {
+            const button = this;
+            const originalText = button.innerHTML;
+
+            button.innerHTML = '⏳ Generating PDF...';
+            button.disabled = true;
+
+            try {
+                const pdfContent = document.createElement('div');
+                pdfContent.style.padding = '20px';
+                pdfContent.style.backgroundColor = '#ffffff';
+                pdfContent.style.color = '#000000';
+                pdfContent.style.fontFamily = 'Arial, sans-serif';
+
+                const title = document.createElement('h1');
+                title.style.textAlign = 'center';
+                title.style.marginBottom = '20px';
+                title.style.color = '#9333ea';
+                title.textContent = 'Relationship Assessment Report';
+                pdfContent.appendChild(title);
+
+                const timestamp = document.createElement('p');
+                timestamp.style.textAlign = 'center';
+                timestamp.style.marginBottom = '30px';
+                timestamp.style.fontSize = '12px';
+                timestamp.style.color = '#666';
+                timestamp.textContent = `Generated on ${new Date().toLocaleString()}`;
+                pdfContent.appendChild(timestamp);
+
+                // Compatibility Score
+                const compatScore = document.getElementById('compatibilityContent').cloneNode(true);
+                const compatSection = document.createElement('div');
+                compatSection.style.marginBottom = '20px';
+                compatSection.style.padding = '15px';
+                compatSection.style.border = '2px solid #9333ea';
+                compatSection.style.borderRadius = '8px';
+                compatSection.style.backgroundColor = '#f5f3ff';
+                const compatTitle = document.createElement('h2');
+                compatTitle.style.marginBottom = '10px';
+                compatTitle.textContent = '⭐ Compatibility Score';
+                compatSection.appendChild(compatTitle);
+                compatSection.appendChild(compatScore);
+                pdfContent.appendChild(compatSection);
+
+                // Assessment Report
+                const assessment = document.getElementById('assessmentContent').cloneNode(true);
+                const assessSection = document.createElement('div');
+                assessSection.style.marginBottom = '20px';
+                assessSection.style.padding = '15px';
+                assessSection.style.border = '1px solid #ccc';
+                assessSection.style.borderRadius = '8px';
+                const assessTitle = document.createElement('h2');
+                assessTitle.style.marginBottom = '10px';
+                assessTitle.textContent = '📊 Detailed Assessment';
+                assessSection.appendChild(assessTitle);
+                assessSection.appendChild(assessment);
+                pdfContent.appendChild(assessSection);
+
+                // Strengths
+                const strengths = document.getElementById('strengthsContent').cloneNode(true);
+                const strengthSection = document.createElement('div');
+                strengthSection.style.marginBottom = '20px';
+                strengthSection.style.padding = '15px';
+                strengthSection.style.border = '1px solid #ccc';
+                strengthSection.style.borderRadius = '8px';
+                const strengthTitle = document.createElement('h2');
+                strengthTitle.style.marginBottom = '10px';
+                strengthTitle.textContent = '💪 Relationship Strengths';
+                strengthSection.appendChild(strengthTitle);
+                strengthSection.appendChild(strengths);
+                pdfContent.appendChild(strengthSection);
+
+                // Growth Areas
+                const growth = document.getElementById('growthContent').cloneNode(true);
+                const growthSection = document.createElement('div');
+                growthSection.style.marginBottom = '20px';
+                growthSection.style.padding = '15px';
+                growthSection.style.border = '1px solid #ccc';
+                growthSection.style.borderRadius = '8px';
+                const growthTitle = document.createElement('h2');
+                growthTitle.style.marginBottom = '10px';
+                growthTitle.textContent = '🌱 Areas for Growth';
+                growthSection.appendChild(growthTitle);
+                growthSection.appendChild(growth);
+                pdfContent.appendChild(growthSection);
+
+                // Recommendations
+                const recommendations = document.getElementById('recommendationsContent').cloneNode(true);
+                const recsSection = document.createElement('div');
+                recsSection.style.marginBottom = '20px';
+                recsSection.style.padding = '15px';
+                recsSection.style.border = '1px solid #ccc';
+                recsSection.style.borderRadius = '8px';
+                const recsTitle = document.createElement('h2');
+                recsTitle.style.marginBottom = '10px';
+                recsTitle.textContent = '💡 Personalized Recommendations';
+                recsSection.appendChild(recsTitle);
+                recsSection.appendChild(recommendations);
+                pdfContent.appendChild(recsSection);
+
+                const opt = {
+                    margin: 10,
+                    filename: `Relationship_Assessment_${new Date().toISOString().split('T')[0]}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                html2pdf().set(opt).from(pdfContent).save().then(() => {
+                    button.innerHTML = '✅ Downloaded!';
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }, 2000);
+                }).catch((error) => {
+                    console.error('PDF generation error:', error);
+                    button.innerHTML = '❌ Error';
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }, 2000);
+                });
+
+            } catch (error) {
+                console.error('PDF content preparation error:', error);
+                button.innerHTML = '❌ Error';
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }, 2000);
+            }
+        });
+
+        // Email modal functions
+        document.getElementById('emailReportBtn').addEventListener('click', function() {
+            document.getElementById('emailModal').classList.remove('hidden');
+        });
+
+        function closeEmailModal() {
+            document.getElementById('emailModal').classList.add('hidden');
+            document.getElementById('emailInput').value = '';
         }
 
-        function formatText(text) {
-            // Split by double newlines for paragraphs, or single newlines if no double ones exist
-            const paragraphs = text.split('\n\n').length > 1 
-                ? text.split('\n\n') 
-                : text.split('\n');
+        async function sendEmail() {
+            const email = document.getElementById('emailInput').value.trim();
             
-            return paragraphs
-                .filter(p => p.trim())
-                .map(p => `<p>${p.trim()}</p>`)
-                .join('');
+            if (!email || !email.includes('@')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = 'Sending...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sessionId: sessionId,
+                        email: email
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to send email');
+                }
+
+                button.innerHTML = '✅ Sent!';
+                setTimeout(() => {
+                    closeEmailModal();
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }, 2000);
+
+            } catch (error) {
+                console.error('Email error:', error);
+                alert('Failed to send email. Please try again.');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
         }
+
+        // Close modal on outside click
+        document.getElementById('emailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEmailModal();
+            }
+        });
+
+        // Load results on page load
+        loadResults();
     </script>
-    function downloadPDF() {
-            const analysis = {
-                concernLevel: document.getElementById('concern-score').textContent,
-                healthScore: document.getElementById('health-score').textContent,
-                detailedAnalysis: document.getElementById('detailed-analysis').innerText,
-                contextAnalysis: document.getElementById('context-analysis').innerText,
-                expertAdvice: document.getElementById('expert-advice').innerText,
-                communicationTips: document.getElementById('communication-tips').innerText
-            };
-
-            const pdfContent = `
-RELATIONSHIP ASSESSMENT REPORT
-Generated: ${new Date().toLocaleDateString()}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-SCORES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Concern Level: ${analysis.concernLevel}
-Health Score: ${analysis.healthScore}
-
-
-BEHAVIORAL PATTERN ANALYSIS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-${analysis.detailedAnalysis}
-
-
-CONTEXT & ALTERNATIVE EXPLANATIONS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-${analysis.contextAnalysis}
-
-
-RECOMMENDED ACTIONS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-${analysis.expertAdvice}
-
-
-COMMUNICATION STRATEGIES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-${analysis.communicationTips}
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-This assessment is for informational purposes only.
-It does not replace professional counseling.
-            `;
-
-            // Create blob and download
-            const blob = new Blob([pdfContent], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `relationship-assessment-${new Date().getTime()}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }
 </body>
 </html>
-
